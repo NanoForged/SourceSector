@@ -89,16 +89,15 @@ public final class BytecodeRemapper {
 
         @Override
         public String map(String internalName) {
-            MappingEntry classEntry = switch (direction) {
-                case OBFUSCATED_TO_NAMED -> repository.findClassByObfuscatedName(internalName).orElse(null);
-                case NAMED_TO_OBFUSCATED -> repository.findClassByNamedName(internalName).orElse(null);
-            };
+            MappingEntry classEntry = findClass(internalName);
             if (classEntry == null) {
                 return internalName;
             }
 
             String mappedName = switch (direction) {
-                case OBFUSCATED_TO_NAMED -> classEntry.namedName();
+                // 目标规则 named ?: intermediary：未命名类落 intermediary 占位名，
+                // 与旧双列全量表（占位名写在 named 列）的 remap 结果一致。
+                case OBFUSCATED_TO_NAMED -> classEntry.namedOrIntermediary();
                 case NAMED_TO_OBFUSCATED -> classEntry.obfuscatedName();
             };
             if (!internalName.equals(mappedName)) {
@@ -107,18 +106,51 @@ public final class BytecodeRemapper {
             return mappedName;
         }
 
+        /**
+         * 按方向解析类条目。named→obf 方向的目标侧名分布在 named 与 intermediary
+         * 两个命名空间（未命名类/成员在目标侧呈现为 intermediary 占位名），
+         * 故 named 索引未命中时查 intermediary 索引。
+         */
+        private MappingEntry findClass(String internalName) {
+            return switch (direction) {
+                case OBFUSCATED_TO_NAMED -> repository.findClassByObfuscatedName(internalName).orElse(null);
+                case NAMED_TO_OBFUSCATED -> repository.findClassByNamedName(internalName)
+                        .or(() -> repository.findClassByIntermediaryName(internalName))
+                        .orElse(null);
+            };
+        }
+
+        /**
+         * named→obf 方向下解析目标侧 owner 类的 intermediary 名，用于成员
+         * intermediary 索引查询；owner 无映射或无锚点名（identity 类）时返回 {@code null}。
+         */
+        private String ownerIntermediaryOf(String owner) {
+            if (direction != MappingDirection.NAMED_TO_OBFUSCATED) {
+                return null;
+            }
+            MappingEntry ownerEntry = findClass(owner);
+            return ownerEntry == null ? null : ownerEntry.intermediaryName();
+        }
+
         @Override
         public String mapFieldName(String owner, String name, String descriptor) {
             MappingEntry fieldEntry = switch (direction) {
                 case OBFUSCATED_TO_NAMED -> repository.findFieldByObfuscatedName(owner, name).orElse(null);
-                case NAMED_TO_OBFUSCATED -> repository.findFieldByNamedName(owner, name).orElse(null);
+                case NAMED_TO_OBFUSCATED -> repository.findFieldByNamedName(owner, name)
+                        .or(() -> {
+                            String ownerIntermediary = ownerIntermediaryOf(owner);
+                            return ownerIntermediary == null
+                                    ? java.util.Optional.<MappingEntry>empty()
+                                    : repository.findFieldByIntermediaryName(ownerIntermediary, name);
+                        })
+                        .orElse(null);
             };
             if (fieldEntry == null) {
                 return name;
             }
 
             String mappedName = switch (direction) {
-                case OBFUSCATED_TO_NAMED -> fieldEntry.namedName();
+                case OBFUSCATED_TO_NAMED -> fieldEntry.namedOrIntermediary();
                 case NAMED_TO_OBFUSCATED -> fieldEntry.obfuscatedName();
             };
             if (!name.equals(mappedName)) {
@@ -131,20 +163,59 @@ public final class BytecodeRemapper {
         public String mapMethodName(String owner, String name, String descriptor) {
             MappingEntry methodEntry = switch (direction) {
                 case OBFUSCATED_TO_NAMED -> repository.findMethodByObfuscatedName(owner, name, descriptor).orElse(null);
-                case NAMED_TO_OBFUSCATED -> repository.findMethodByNamedName(owner, name, descriptor).orElse(null);
+                case NAMED_TO_OBFUSCATED -> repository.findMethodByNamedName(owner, name, descriptor)
+                        .or(() -> {
+                            // 成员 intermediary 索引以 obf 侧描述符为 key，
+                            // 目标侧描述符需先逐类换算为 obf 形式。
+                            String ownerIntermediary = ownerIntermediaryOf(owner);
+                            return ownerIntermediary == null
+                                    ? java.util.Optional.<MappingEntry>empty()
+                                    : repository.findMethodByIntermediaryName(
+                                            ownerIntermediary, name, toObfuscatedDescriptor(descriptor));
+                        })
+                        .orElse(null);
             };
             if (methodEntry == null) {
                 return name;
             }
 
             String mappedName = switch (direction) {
-                case OBFUSCATED_TO_NAMED -> methodEntry.namedName();
+                case OBFUSCATED_TO_NAMED -> methodEntry.namedOrIntermediary();
                 case NAMED_TO_OBFUSCATED -> methodEntry.obfuscatedName();
             };
             if (!name.equals(mappedName)) {
                 modified = true;
             }
             return mappedName;
+        }
+
+        /**
+         * 目标侧描述符换算为 obf 侧：类名逐段按 named / intermediary 双索引解析，
+         * 表外类（JDK / 第三方 / 未混淆 api）保持原样。
+         */
+        private String toObfuscatedDescriptor(String descriptor) {
+            if (descriptor == null || descriptor.indexOf('L') < 0) {
+                return descriptor;
+            }
+            StringBuilder builder = new StringBuilder(descriptor.length());
+            int cursor = 0;
+            while (cursor < descriptor.length()) {
+                char current = descriptor.charAt(cursor);
+                if (current != 'L') {
+                    builder.append(current);
+                    cursor++;
+                    continue;
+                }
+                int end = descriptor.indexOf(';', cursor);
+                if (end < 0) {
+                    throw new IllegalArgumentException("描述符格式不正确: " + descriptor);
+                }
+                String internalName = descriptor.substring(cursor + 1, end);
+                MappingEntry classEntry = findClass(internalName);
+                builder.append('L').append(classEntry == null ? internalName : classEntry.obfuscatedName()).append(';');
+                cursor = end + 1;
+            }
+            return builder.toString();
         }
 
         boolean modified() {

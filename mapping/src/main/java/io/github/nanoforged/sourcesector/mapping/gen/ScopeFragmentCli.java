@@ -23,7 +23,7 @@ import java.util.stream.Stream;
  * <p>
  * 用法：{@code ScopeFragmentCli <gameJarsRoot> <mappingsDir> <reportFile>}
  * <p>
- * 对 linux / windows 两个平台各执行一次：加载 {@code mappingsDir/scopes/} 下全部
+ * 按 windows 基准平台执行一次（单平台收敛，跨平台一致性由 NanoForged 承担）：加载 {@code mappingsDir/scopes/} 下全部
  * scope 片段，校验：
  * <ul>
  *     <li>可解析（Tiny v2 格式，解析失败直接报错）；</li>
@@ -85,6 +85,10 @@ public final class ScopeFragmentCli {
 
         int totalFragments = 0;
         for (MappingPlatform platform : MappingPlatform.values()) {
+            if (platform != MappingPlatform.WINDOWS) {
+                // 单平台收敛：scope 片段只按 windows 基准校验，跨平台一致性由 NanoForged 承担。
+                continue;
+            }
             List<ScopeFragments.ScopeFragment> fragments = ScopeFragments.load(scopesDir, platform);
             totalFragments += fragments.size();
             report.add("");
@@ -246,7 +250,8 @@ public final class ScopeFragmentCli {
                 .merge(priorityEntries, ScopeFragments.mergedEntries(fragments), generated);
         Map<String, String> namedToObfuscated = new HashMap<>();
         for (MappingEntry entry : merged) {
-            if (entry.isClass()) {
+            // 三列全量表的未命名类 named 为空，不进入换算上下文（描述符 canonical 为 obf 侧）。
+            if (entry.isClass() && entry.namedName() != null) {
                 namedToObfuscated.put(entry.namedName(), entry.obfuscatedName());
             }
         }

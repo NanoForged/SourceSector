@@ -17,11 +17,11 @@ import java.util.Set;
  * <p>
  * 用法：{@code UsageScanCli <humanMappingsDir> <generatedMappingsDir> <reportDir> <input...>}
  * <p>
- * 对 linux / windows 两个平台各执行一次：加载构建期全量表
- * {@code generatedMappingsDir/<platform>/ssoptimizer-<platform>-full.tiny}，
+ * 按 windows 基准平台执行一次（单平台收敛）：加载构建期全量表
+ * {@code generatedMappingsDir/windows/ssoptimizer-windows-full.tiny}，
  * 扫描 {@code input}（消费侧 jar 或 class 目录，可多个）中对游戏类/成员的静态引用，
  * 按 语义命名 / 保持原名 / 提升名 / 占位名 分类，输出
- * {@code reportDir/mapping-usage-<platform>.txt}。
+ * {@code reportDir/mapping-usage-windows.txt}。
  * 分类语义与盲区见 {@link MappingUsageScanner} 类文档。
  */
 public final class UsageScanCli {
@@ -57,6 +57,10 @@ public final class UsageScanCli {
         }
 
         for (MappingPlatform platform : MappingPlatform.values()) {
+            if (platform != MappingPlatform.WINDOWS) {
+                // 单平台收敛：只按 windows 基准的全量表扫描，跨平台一致性由 NanoForged 承担。
+                continue;
+            }
             Path fullMappingFile = generatedMappingsDir
                     .resolve(platform.id())
                     .resolve("ssoptimizer-" + platform.id() + "-full.tiny");

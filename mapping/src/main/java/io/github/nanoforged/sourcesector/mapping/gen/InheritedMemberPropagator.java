@@ -39,7 +39,7 @@ public final class InheritedMemberPropagator {
     /**
      * 为合并后的全量条目补齐继承成员别名。
      *
-     * @param mergedEntries 合并后的全量映射条目（描述符为 named 存储）
+     * @param mergedEntries 合并后的全量映射条目（三列形态，描述符为 obf 侧 canonical）
      * @param classes       混淆 jar 扫描出的类结构（提供继承关系与成员声明真值）
      * @return 含继承别名的新条目列表（输入列表不被修改）
      */
@@ -52,11 +52,12 @@ public final class InheritedMemberPropagator {
             structureByName.put(classStructure.name(), classStructure);
         }
 
-        Map<String, String> namedClassByObfuscated = new HashMap<>();
+        Map<String, String> targetClassByObfuscated = new HashMap<>();
         Map<String, Map<String, List<MappingEntry>>> membersByOwner = new HashMap<>();
         for (MappingEntry entry : mergedEntries) {
             if (entry.isClass()) {
-                namedClassByObfuscated.put(entry.obfuscatedName(), entry.namedName());
+                // 目标侧类名：named 优先，未命名类落 intermediary 占位名（与 remap 目标规则一致）。
+                targetClassByObfuscated.put(entry.obfuscatedName(), entry.namedOrIntermediary());
                 continue;
             }
             membersByOwner.computeIfAbsent(entry.ownerObfuscatedName(), key -> new HashMap<>())
@@ -67,7 +68,7 @@ public final class InheritedMemberPropagator {
         Map<String, List<MappingEntry>> propagatedByOwner = new LinkedHashMap<>();
         for (ClassStructure classStructure : classes) {
             List<MappingEntry> propagated = collectInheritedEntries(
-                    classStructure, structureByName, membersByOwner, namedClassByObfuscated);
+                    classStructure, structureByName, membersByOwner, targetClassByObfuscated);
             if (!propagated.isEmpty()) {
                 propagatedByOwner.put(classStructure.name(), propagated);
             }
@@ -95,7 +96,7 @@ public final class InheritedMemberPropagator {
         }
         // 有结构但全量表中无类条目的类（理论上不存在：占位生成覆盖全部扫描类），别名直接追加到末尾
         for (Map.Entry<String, List<MappingEntry>> ownerEntries : propagatedByOwner.entrySet()) {
-            if (!namedClassByObfuscated.containsKey(ownerEntries.getKey())) {
+            if (!targetClassByObfuscated.containsKey(ownerEntries.getKey())) {
                 result.addAll(ownerEntries.getValue());
             }
         }
@@ -106,10 +107,10 @@ public final class InheritedMemberPropagator {
             ClassStructure classStructure,
             Map<String, ClassStructure> structureByName,
             Map<String, Map<String, List<MappingEntry>>> membersByOwner,
-            Map<String, String> namedClassByObfuscated) {
+            Map<String, String> targetClassByObfuscated) {
         Set<String> ownFieldNames = memberNames(classStructure.fields());
         Set<String> ownMethodNames = memberNames(classStructure.methods());
-        String ownerNamed = namedClassByObfuscated.getOrDefault(classStructure.name(), classStructure.name());
+        String ownerNamed = targetClassByObfuscated.getOrDefault(classStructure.name(), classStructure.name());
 
         List<MappingEntry> propagated = new ArrayList<>();
         Set<String> addedKeys = new HashSet<>();
@@ -136,7 +137,7 @@ public final class InheritedMemberPropagator {
                 for (MappingEntry entry : lookup(membersByOwner, ancestorName, MappingEntry.Kind.FIELD, field.name())) {
                     if (addedKeys.add("FIELD#" + entry.obfuscatedName() + '#' + entry.descriptor())) {
                         propagated.add(MappingEntry.fieldEntry(classStructure.name(), ownerNamed,
-                                entry.obfuscatedName(), entry.namedName(), entry.descriptor())
+                                entry.obfuscatedName(), entry.intermediaryName(), entry.namedName(), entry.descriptor())
                                 .withComment(PROPAGATED_COMMENT));
                     }
                 }
@@ -148,7 +149,7 @@ public final class InheritedMemberPropagator {
                 for (MappingEntry entry : lookup(membersByOwner, ancestorName, MappingEntry.Kind.METHOD, method.name())) {
                     if (addedKeys.add("METHOD#" + entry.obfuscatedName() + '#' + entry.descriptor())) {
                         propagated.add(MappingEntry.methodEntry(classStructure.name(), ownerNamed,
-                                entry.obfuscatedName(), entry.namedName(), entry.descriptor())
+                                entry.obfuscatedName(), entry.intermediaryName(), entry.namedName(), entry.descriptor())
                                 .withComment(PROPAGATED_COMMENT));
                     }
                 }

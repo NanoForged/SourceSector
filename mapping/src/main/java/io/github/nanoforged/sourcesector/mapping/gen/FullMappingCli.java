@@ -21,26 +21,23 @@ import java.util.stream.Stream;
  * <p>
  * 用法：{@code FullMappingCli <gameJarsRoot> <humanMappingsDir> <outputDir> <reportDir>}
  * <p>
- * 对 linux / windows 两个平台各执行一次：扫描 {@code gameJarsRoot/<platform>/} 下的
+ * 平台收敛：全量表只以 windows 为基准生成——扫描 {@code gameJarsRoot/windows/} 下的
  * 混淆 jar（{@code *_obf.jar}，未混淆的 starfarer.api.jar 不生成占位映射），
- * 与人工表 {@code humanMappingsDir/ssoptimizer-<platform>.tiny} 及保持原名片段
+ * 与人工表 {@code humanMappingsDir/ssoptimizer-windows.tiny} 及保持原名片段
  * {@code humanMappingsDir/ssoptimizer-identity.tiny}（可选，登记 app 编译期直接引用、
- * 必须保持原名的类）、scope 语义片段 {@code humanMappingsDir/scopes/<scope>-<platform>.tiny}
+ * 必须保持原名的类）、scope 语义片段 {@code humanMappingsDir/scopes/<scope>-windows.tiny}
  * （可选，分层优先级：占位生成 < identity 片段 < scope 片段 < 人工运行期表；
  * scope 间混淆 key 或 named 类名冲突直接报错并指明两个 scope）
  * 合并后输出
- * {@code outputDir/<platform>/ssoptimizer-<platform>-full.tiny}，
+ * {@code outputDir/windows/ssoptimizer-windows-full.tiny}，
  * 输出前由 {@link InheritedMemberPropagator} 沿继承链补齐子类侧成员别名
  * （混淆器会把继承成员引用挂在子类 owner 上），并产出漂移报告
- * {@code reportDir/mapping-drift-<platform>.txt} 与
- * 跨平台匹配报告 {@code reportDir/cross-platform-match.txt}。
+ * {@code reportDir/mapping-drift-windows.txt}。
+ * linux jar 仅做结构扫描，产出跨平台指纹对位报告
+ * {@code reportDir/cross-platform-match.txt}（CI 门禁用；跨平台 remap 由 NanoForged 承担）。
  * 生成是确定性的：同一输入两次运行输出字节一致。
  */
 public final class FullMappingCli {
-    /** 占位成员名格式（{@code f_<指纹8>} / {@code m_<指纹8>}，冲突组追加 {@code _N}），与 {@code IntermediaryNameGenerator} 一致。 */
-    private static final java.util.regex.Pattern PLACEHOLDER_MEMBER_NAME =
-            java.util.regex.Pattern.compile("[fm]_[0-9a-f]{8}(_\\d+)?");
-
     /** 跨平台报告中未匹配类清单的最大行数。 */
     private static final int UNMATCHED_LIST_LIMIT = 200;
 
@@ -76,7 +73,12 @@ public final class FullMappingCli {
         for (MappingPlatform platform : MappingPlatform.values()) {
             List<Path> jars = obfuscatedJars(gameJarsRoot.resolve(platform.id()));
             List<ClassStructure> classes = ClassStructure.scan(jars);
+            // 双平台都扫描：linux 侧结构供跨平台指纹对位报告（CI 门禁）使用。
             classesByPlatform.put(platform, classes);
+            if (platform != MappingPlatform.WINDOWS) {
+                // 单平台收敛：全量表只以 windows 为基准生成，跨平台 remap 由 NanoForged 承担。
+                continue;
+            }
 
             List<ScopeFragments.ScopeFragment> scopeFragments = ScopeFragments.load(scopesDir, platform);
             List<String> scopeConflicts = ScopeFragments.crossScopeConflictLines(scopeFragments);
@@ -105,11 +107,12 @@ public final class FullMappingCli {
             writeDriftReport(reportDir.resolve("mapping-drift-" + platform.id() + ".txt"), platform, drift);
 
             long totalMembers = merged.stream().filter(entry -> !entry.isClass()).count();
-            long placeholderMembers = merged.stream()
-                    .filter(entry -> !entry.isClass() && PLACEHOLDER_MEMBER_NAME.matcher(entry.namedName()).matches())
+            // 三列全量表中 named 为空的成员即未命名（占位）成员，remap 时落 intermediary 名。
+            long unnamedMembers = merged.stream()
+                    .filter(entry -> !entry.isClass() && entry.namedName() == null)
                     .count();
             double semanticCoverage = totalMembers == 0 ? 100.0
-                    : (totalMembers - placeholderMembers) * 100.0 / totalMembers;
+                    : (totalMembers - unnamedMembers) * 100.0 / totalMembers;
 
             System.out.println("[FullMappingCli] " + platform.id() + ": 扫描类 " + classes.size()
                     + ", 人工条目 " + humanRepository.entries().size()
@@ -117,8 +120,8 @@ public final class FullMappingCli {
                     + ", 占位条目 " + generated.size()
                     + ", 全量条目 " + merged.size()
                     + ", 漂移条目 " + drift.size()
-                    + String.format(java.util.Locale.ROOT, ", 语义覆盖率 %.1f%%（成员 %d / 占位 %d）",
-                            semanticCoverage, totalMembers, placeholderMembers));
+                    + String.format(java.util.Locale.ROOT, ", 语义覆盖率 %.1f%%（成员 %d / 未命名 %d）",
+                            semanticCoverage, totalMembers, unnamedMembers));
         }
 
         writeCrossPlatformReport(reportDir.resolve("cross-platform-match.txt"), classesByPlatform);

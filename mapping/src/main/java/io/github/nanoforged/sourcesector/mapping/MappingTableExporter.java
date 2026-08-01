@@ -96,26 +96,56 @@ public final class MappingTableExporter {
      * <p>
      * 按条目原始顺序输出类行与成员行，并保留注释行（类行下 {@code \tc}、成员行下
      * {@code \t\tc}），使"解析 → 导出 → 再解析"往返不丢失注释。
+     * <p>
+     * 列布局由条目内容决定：任一条目带 intermediary 名时输出三列
+     * {@code obf intermediary named}（unnamed 条目省略 named 尾列），
+     * 否则输出双列 {@code obf named}（人工层输入格式）。
      *
      * @return Tiny v2 文本
      */
     public String exportTiny() {
+        boolean threeColumn = repository.entries().stream().anyMatch(entry -> entry.intermediaryName() != null);
+
         StringBuilder builder = new StringBuilder();
-        builder.append("tiny\t2\t0\tobf\tnamed\n");
+        builder.append(threeColumn ? "tiny\t2\t0\tobf\tintermediary\tnamed\n" : "tiny\t2\t0\tobf\tnamed\n");
         for (MappingEntry entry : repository.entries()) {
             if (entry.isClass()) {
-                builder.append("c\t").append(entry.obfuscatedName()).append('\t').append(entry.namedName()).append('\n');
+                builder.append("c\t").append(entry.obfuscatedName());
+                if (threeColumn) {
+                    builder.append('\t').append(intermediaryColumn(entry));
+                    if (entry.namedName() != null) {
+                        builder.append('\t').append(entry.namedName());
+                    }
+                } else {
+                    builder.append('\t').append(entry.namedName());
+                }
+                builder.append('\n');
                 appendComment(builder, "\t", entry);
                 continue;
             }
             builder.append('\t').append(entry.isField() ? 'f' : 'm')
-                    .append('\t').append(entry.obfuscatedName())
-                    .append('\t').append(entry.namedName())
-                    .append('\t').append(entry.descriptor())
-                    .append('\n');
+                    .append('\t').append(entry.obfuscatedName());
+            if (threeColumn) {
+                builder.append('\t').append(intermediaryColumn(entry));
+                if (entry.namedName() != null) {
+                    builder.append('\t').append(entry.namedName());
+                }
+            } else {
+                builder.append('\t').append(entry.namedName());
+            }
+            builder.append('\t').append(entry.descriptor()).append('\n');
             appendComment(builder, "\t\t", entry);
         }
         return builder.toString();
+    }
+
+    /**
+     * 三列模式下 intermediary 列取值：人工/identity 层条目无锚点名（{@code null}），
+     * 按标准 tiny 语义（该命名空间未映射 = 保持源名）写 obf 名充当 identity intermediary。
+     * 生成层条目必有真实指纹锚点名，不经过此分支。
+     */
+    private static String intermediaryColumn(MappingEntry entry) {
+        return entry.intermediaryName() != null ? entry.intermediaryName() : entry.obfuscatedName();
     }
 
     private static void appendComment(StringBuilder builder, String indent, MappingEntry entry) {
@@ -147,10 +177,8 @@ public final class MappingTableExporter {
     }
 
     private static String toNamedText(MappingEntry entry) {
-        if (entry.isClass()) {
-            return entry.namedName();
-        }
-        return entry.namedName();
+        // unnamed 条目展示 intermediary 占位名，保证审查视图不缺失目标名
+        return entry.namedOrIntermediary();
     }
 
     private record Row(String kind, String obfuscated, String named, String descriptor) {

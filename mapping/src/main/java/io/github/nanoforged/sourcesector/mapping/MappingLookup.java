@@ -42,6 +42,17 @@ public final class MappingLookup {
     }
 
     /**
+     * 通过中间类名获取类映射。
+     *
+     * @param intermediaryName 中间类名
+     * @return 类映射
+     */
+    public MappingEntry requireClassByIntermediaryName(String intermediaryName) {
+        return repository.findClassByIntermediaryName(intermediaryName)
+                .orElseThrow(() -> new MappingLookupException("未找到类映射: " + intermediaryName));
+    }
+
+    /**
      * 通过可读类名和字段名获取字段映射。
      *
      * @param ownerNamedName 可读类名
@@ -89,5 +100,30 @@ public final class MappingLookup {
     public MappingEntry requireMethodByNamedName(String ownerNamedName, String methodName, String descriptor) {
         return repository.findMethodByNamedName(ownerNamedName, methodName, descriptor)
                 .orElseThrow(() -> new MappingLookupException("未找到方法映射: " + ownerNamedName + '#' + methodName + descriptor));
+    }
+
+    /**
+     * 通过中间类名和字段名获取字段映射。
+     *
+     * @param ownerIntermediaryName 中间类名
+     * @param fieldName             中间字段名
+     * @return 字段映射
+     */
+    public MappingEntry requireFieldByIntermediaryName(String ownerIntermediaryName, String fieldName) {
+        return repository.findFieldByIntermediaryName(ownerIntermediaryName, fieldName)
+                .orElseThrow(() -> new MappingLookupException("未找到字段映射: " + ownerIntermediaryName + '#' + fieldName));
+    }
+
+    /**
+     * 通过中间类名、方法名和描述符获取方法映射。
+     *
+     * @param ownerIntermediaryName 中间类名
+     * @param methodName            中间方法名
+     * @param descriptor            方法描述符（canonical：obf 侧）
+     * @return 方法映射
+     */
+    public MappingEntry requireMethodByIntermediaryName(String ownerIntermediaryName, String methodName, String descriptor) {
+        return repository.findMethodByIntermediaryName(ownerIntermediaryName, methodName, descriptor)
+                .orElseThrow(() -> new MappingLookupException("未找到方法映射: " + ownerIntermediaryName + '#' + methodName + descriptor));
     }
 }

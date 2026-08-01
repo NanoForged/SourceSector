@@ -99,8 +99,10 @@ public final class MappingUsageScanner {
         Map<String, Integer> placeholderMembersByClass = new LinkedHashMap<>();
         for (MappingEntry entry : fullRepository.entries()) {
             if (entry.isClass()) {
-                tableClassNames.add(entry.namedName());
-            } else if (PLACEHOLDER_MEMBER_NAME.matcher(entry.namedName()).matches()) {
+                // 目标侧类名：named 优先，未命名类落 intermediary 占位名。
+                tableClassNames.add(entry.namedOrIntermediary());
+            } else if (entry.namedName() == null) {
+                // 三列全量表中 named 为空的成员即未命名成员（引用侧呈现为 f_/m_ 中间名）。
                 placeholderMembersByClass.merge(entry.ownerNamedName(), 1, Integer::sum);
             }
         }

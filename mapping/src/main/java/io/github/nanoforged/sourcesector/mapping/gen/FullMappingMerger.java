@@ -19,14 +19,19 @@ import java.util.TreeSet;
  * 全量映射表合并器。
  * <p>
  * 输入人工映射条目（运行期权威表）、scope 语义片段条目与
- * {@link IntermediaryNameGenerator} 生成的占位条目，输出构建期全量表条目。
+ * {@link IntermediaryNameGenerator} 生成的中间名条目，输出构建期全量表条目。
  * 分层优先级：占位生成 &lt; scope 片段 &lt; 人工条目（同混淆类/成员高层胜出），
  * 人工与 scope 条目附带的注释原样保留，占位条目无注释。
  * <p>
  * 输出条目按混淆类名排序，类块内先人工成员（保持人工表顺序）、再 scope 成员
  * （保持片段顺序）、后占位成员（保持 jar 声明顺序），保证同一输入两次合并输出字节一致。
- * 生成条目的描述符在此统一换算为 named 存储：表内类写 named 名，表外类（JDK / 第三方 /
- * 未混淆的 starfarer.api）保持原样。
+ * 全量表为三列形态（obf / intermediary / named），描述符统一以 obf 侧为 canonical：
+ * 人工/scope 条目的 named 描述符在合并时换算为 obf 形式，生成条目描述符本即 obf 侧原样。
+ * 表外类（JDK / 第三方 / 未混淆的 starfarer.api）在描述符换算中保持原样。
+ * <p>
+ * 人工/scope 类条目胜出时，生成层发放的 intermediary 类条目只贡献锚点名——
+ * 合并器把 intermediary 名转移到胜出条目上（人工层输入无锚点，其未命名成员的
+ * intermediary 索引需要 owner 中间名才能解析）。
  */
 public final class FullMappingMerger {
     /**
@@ -95,24 +100,36 @@ public final class FullMappingMerger {
             }
         }
 
-        // 人工/scope 优先：占位生成器已跳过人工条目，这里再做一次防御性去重与 named 唯一性校验。
+        // 人工/scope 优先：生成器为全部非 identity 类发放了 intermediary 类条目，
+        // 这里做防御性去重、named 唯一性校验，并把锚点名转移到胜出条目上。
         for (MappingEntry generatedClass : generatedClassByObfuscated.values()) {
-            if (classByObfuscated.containsKey(generatedClass.obfuscatedName())) {
+            MappingEntry winner = classByObfuscated.get(generatedClass.obfuscatedName());
+            if (winner != null) {
+                if (winner.intermediaryName() == null) {
+                    classByObfuscated.put(winner.obfuscatedName(),
+                            winner.withIntermediaryName(generatedClass.intermediaryName()));
+                }
                 continue;
             }
-            String existingOwner = namedClassOwner.putIfAbsent(generatedClass.namedName(), generatedClass.obfuscatedName());
-            if (existingOwner != null) {
-                throw new MappingLookupException("全量表 named 类名冲突: " + generatedClass.namedName()
-                        + " 同时映射 " + existingOwner + " 与 " + generatedClass.obfuscatedName());
+            if (generatedClass.namedName() != null) {
+                String existingOwner = namedClassOwner.putIfAbsent(generatedClass.namedName(), generatedClass.obfuscatedName());
+                if (existingOwner != null) {
+                    throw new MappingLookupException("全量表 named 类名冲突: " + generatedClass.namedName()
+                            + " 同时映射 " + existingOwner + " 与 " + generatedClass.obfuscatedName());
+                }
             }
             classByObfuscated.put(generatedClass.obfuscatedName(), generatedClass);
         }
 
         // 成员去重 key 统一换算为混淆形式描述符：人工/scope 条目存 named 描述符，
         // 占位条目存混淆描述符，只有换算到同一侧才能正确判重。
+        // 全量表描述符以 obf 侧为 canonical，故只对非空 named 类登记换算表。
         Map<String, String> namedToObfuscated = new HashMap<>();
-        classByObfuscated.forEach((obfuscatedName, classEntry) ->
-                namedToObfuscated.put(classEntry.namedName(), obfuscatedName));
+        classByObfuscated.forEach((obfuscatedName, classEntry) -> {
+            if (classEntry.namedName() != null) {
+                namedToObfuscated.put(classEntry.namedName(), obfuscatedName);
+            }
+        });
         Set<String> humanMemberKeys = memberKeys(humanMembersByOwner, namedToObfuscated);
         Set<String> scopeMemberKeys = memberKeys(scopeMembersByOwner, namedToObfuscated);
 
@@ -120,19 +137,23 @@ public final class FullMappingMerger {
         List<MappingEntry> merged = new ArrayList<>();
         for (String className : allClassNames) {
             merged.add(classByObfuscated.get(className));
-            merged.addAll(humanMembersByOwner.getOrDefault(className, List.of()));
+            // 人工/scope 成员条目的描述符在此统一换算为 obf 侧 canonical 存储；
+            // 生成条目描述符本即 obf 侧，原样收录。
+            for (MappingEntry humanMember : humanMembersByOwner.getOrDefault(className, List.of())) {
+                merged.add(humanMember.withDescriptor(toObfuscatedDescriptor(humanMember.descriptor(), namedToObfuscated)));
+            }
             for (MappingEntry scopeMember : scopeMembersByOwner.getOrDefault(className, List.of())) {
                 if (humanMemberKeys.contains(memberKey(scopeMember, namedToObfuscated))) {
                     continue;
                 }
-                merged.add(scopeMember);
+                merged.add(scopeMember.withDescriptor(toObfuscatedDescriptor(scopeMember.descriptor(), namedToObfuscated)));
             }
             for (MappingEntry generatedMember : generatedMembersByOwner.getOrDefault(className, List.of())) {
                 if (humanMemberKeys.contains(memberKey(generatedMember, namedToObfuscated))
                         || scopeMemberKeys.contains(memberKey(generatedMember, namedToObfuscated))) {
                     continue;
                 }
-                merged.add(toNamedDescriptorEntry(generatedMember, classByObfuscated));
+                merged.add(generatedMember);
             }
         }
         return merged;
@@ -217,44 +238,6 @@ public final class FullMappingMerger {
             }
         }
         return drift;
-    }
-
-    private static MappingEntry toNamedDescriptorEntry(MappingEntry entry, Map<String, MappingEntry> classByObfuscated) {
-        String namedDescriptor = remapDescriptor(entry.descriptor(), classByObfuscated);
-        if (namedDescriptor.equals(entry.descriptor())) {
-            return entry;
-        }
-        if (entry.isField()) {
-            return MappingEntry.fieldEntry(entry.ownerObfuscatedName(), entry.ownerNamedName(),
-                    entry.obfuscatedName(), entry.namedName(), namedDescriptor);
-        }
-        return MappingEntry.methodEntry(entry.ownerObfuscatedName(), entry.ownerNamedName(),
-                entry.obfuscatedName(), entry.namedName(), namedDescriptor);
-    }
-
-    private static String remapDescriptor(String descriptor, Map<String, MappingEntry> classByObfuscated) {
-        if (descriptor == null || descriptor.indexOf('L') < 0) {
-            return descriptor;
-        }
-        StringBuilder builder = new StringBuilder(descriptor.length());
-        int cursor = 0;
-        while (cursor < descriptor.length()) {
-            char current = descriptor.charAt(cursor);
-            if (current != 'L') {
-                builder.append(current);
-                cursor++;
-                continue;
-            }
-            int end = descriptor.indexOf(';', cursor);
-            if (end < 0) {
-                throw new MappingLookupException("描述符格式不正确: " + descriptor);
-            }
-            String internalName = descriptor.substring(cursor + 1, end);
-            MappingEntry classEntry = classByObfuscated.get(internalName);
-            builder.append('L').append(classEntry == null ? internalName : classEntry.namedName()).append(';');
-            cursor = end + 1;
-        }
-        return builder.toString();
     }
 
     private static String toObfuscatedDescriptor(String descriptor, Map<String, String> namedToObfuscated) {
