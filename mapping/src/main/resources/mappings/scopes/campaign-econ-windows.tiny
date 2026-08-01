@@ -1,6 +1,5 @@
 tiny	2	0	obf	named
 c	com/fs/starfarer/campaign/econ/DemandValueTracker	com/fs/starfarer/campaign/econ/DemandValueTracker
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	MODIFIER_ID	MODIFIER_ID	Ljava/lang/String;
 	f	baseValue	baseValue	F
 	f	market	market	Lcom/fs/starfarer/campaign/econ/Market;
@@ -10,7 +9,6 @@ c	com/fs/starfarer/campaign/econ/DemandValueTracker	com/fs/starfarer/campaign/ec
 	m	getDemandMetFraction	getDemandMetFraction	()F
 	m	getRawBaseValue	getRawBaseValue	()F
 c	com/fs/starfarer/campaign/econ/Economy	com/fs/starfarer/campaign/econ/Economy
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	ECONOMY_INTERVAL_IN_GAME_DAYS	ECONOMY_INTERVAL_IN_GAME_DAYS	F
 	f	NUM_ITER_PER_MONTH	NUM_ITER_PER_MONTH	I
 	f	MIN_DEMAND_FOR_PRICING	MIN_DEMAND_FOR_PRICING	I
@@ -67,12 +65,9 @@ c	com/fs/starfarer/campaign/econ/Economy	com/fs/starfarer/campaign/econ/Economy
 	m	getMarketsWithSameGroup	getMarketsWithSameGroup	(Lcom/fs/starfarer/api/campaign/econ/MarketAPI;)Ljava/util/List;
 	m	getMarketsWithSameGroup	getMarketsWithSameGroup	(Lcom/fs/starfarer/api/campaign/econ/MarketAPI;Ljava/util/List;)Ljava/util/List;
 c	com/fs/starfarer/campaign/econ/Market$1	com/fs/starfarer/campaign/econ/Market$SubmarketOrderComparator
-	c 来源(javap取证) | 置信度(中) | 证据(Market内部类：Comparator<Submarket> 按 spec.getOrder() 排序子市场；与 linux 同类内容复核一致)
 	m	super	compare	(Lcom/fs/starfarer/campaign/econ/Submarket;Lcom/fs/starfarer/campaign/econ/Submarket;)I
 	f	this$0	this$0	Lcom/fs/starfarer/campaign/econ/Market;
-		c javap 字节码取证 | 高 | 匿名类合成外围引用
 c	com/fs/starfarer/campaign/econ/MarketCondition	com/fs/starfarer/campaign/econ/MarketCondition
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	id	id	Ljava/lang/String;
 	f	spec	spec	Lcom/fs/starfarer/loading/T;
 	f	plugin	plugin	Lcom/fs/starfarer/api/campaign/econ/MarketConditionPlugin;
@@ -94,7 +89,6 @@ c	com/fs/starfarer/campaign/econ/MarketCondition	com/fs/starfarer/campaign/econ/
 	m	toString	toString	()Ljava/lang/String;
 	m	getSpec	getSpec	()Lcom/fs/starfarer/api/characters/MarketConditionSpecAPI;
 c	com/fs/starfarer/campaign/econ/MarketConnection	com/fs/starfarer/campaign/econ/MarketConnection
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	MODIFIER_ID	MODIFIER_ID	Ljava/lang/String;
 	f	enabled	enabled	Z
 	f	allTradeIsSmuggling	allTradeIsSmuggling	Z
@@ -120,7 +114,6 @@ c	com/fs/starfarer/campaign/econ/MarketConnection	com/fs/starfarer/campaign/econ
 	m	setAllTradeIsSmuggling	setAllTradeIsSmuggling	(Z)V
 	m	main	main	([Ljava/lang/String;)V
 c	com/fs/starfarer/campaign/econ/MarketDemand	com/fs/starfarer/campaign/econ/MarketDemand
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	demandClass	demandClass	Ljava/lang/String;
 	f	demand	demand	Lcom/fs/starfarer/api/combat/MutableStat;
 	f	baseCommodity	baseCommodity	Lcom/fs/starfarer/loading/OOoOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO;
@@ -134,7 +127,6 @@ c	com/fs/starfarer/campaign/econ/MarketDemand	com/fs/starfarer/campaign/econ/Mar
 	m	getEModExtra	getEModExtra	(Lcom/fs/starfarer/api/campaign/econ/CommodityOnMarketAPI;)I
 	m	getBaseCommodity	getBaseCommodity	()Lcom/fs/starfarer/api/campaign/econ/CommoditySpecAPI;
 c	com/fs/starfarer/campaign/econ/MarketDemandData	com/fs/starfarer/campaign/econ/MarketDemandData
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	demands	demands	Ljava/util/Map;
 	f	market	market	Lcom/fs/starfarer/campaign/econ/Market;
 	m	readResolve	readResolve	()Ljava/lang/Object;
@@ -142,7 +134,6 @@ c	com/fs/starfarer/campaign/econ/MarketDemandData	com/fs/starfarer/campaign/econ
 	m	getDemands	getDemands	()Ljava/util/Map;
 	m	getDemandList	getDemandList	()Ljava/util/List;
 c	com/fs/starfarer/campaign/econ/PlanetConditionMarket	com/fs/starfarer/campaign/econ/PlanetConditionMarket
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	id	id	Ljava/lang/String;
 	f	name	name	Ljava/lang/String;
 	f	primaryEntity	primaryEntity	Lcom/fs/starfarer/api/campaign/SectorEntityToken;
@@ -365,7 +356,6 @@ c	com/fs/starfarer/campaign/econ/PlanetConditionMarket	com/fs/starfarer/campaign
 	m	getCommodityData	getCommodityData	(Ljava/lang/String;)Lcom/fs/starfarer/api/campaign/econ/CommodityOnMarketAPI;
 	m	getFaction	getFaction	()Lcom/fs/starfarer/api/campaign/FactionAPI;
 c	com/fs/starfarer/campaign/econ/PriceCalculator	com/fs/starfarer/campaign/econ/PriceCalculator
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	MIN_DEMAND_FOR_PRICING	MIN_DEMAND_FOR_PRICING	I
 	f	MIN_STOCKPILE_FOR_PRICING	MIN_STOCKPILE_FOR_PRICING	I
 	f	IMPACT_MULT	IMPACT_MULT	F
@@ -399,7 +389,6 @@ c	com/fs/starfarer/campaign/econ/PriceCalculator	com/fs/starfarer/campaign/econ/
 	m	getHighPriceMult	getHighPriceMult	()F
 	m	setHighPriceMult	setHighPriceMult	(F)V
 c	com/fs/starfarer/campaign/econ/Submarket	com/fs/starfarer/campaign/econ/Submarket
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	spec	spec	Lcom/fs/starfarer/loading/L;
 	f	market	market	Lcom/fs/starfarer/campaign/econ/Market;
 	f	specId	specId	Ljava/lang/String;
@@ -427,7 +416,6 @@ c	com/fs/starfarer/campaign/econ/Submarket	com/fs/starfarer/campaign/econ/Submar
 	m	getMarket	getMarket	()Lcom/fs/starfarer/api/campaign/econ/MarketAPI;
 	m	getFaction	getFaction	()Lcom/fs/starfarer/api/campaign/FactionAPI;
 c	com/fs/starfarer/campaign/econ/contract/Bid	com/fs/starfarer/campaign/econ/contract/Bid
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	contract	contract	Lcom/fs/starfarer/campaign/econ/contract/Contract;
 	f	market	market	Lcom/fs/starfarer/campaign/econ/Market;
 	f	commodityId	commodityId	Ljava/lang/String;
@@ -436,7 +424,6 @@ c	com/fs/starfarer/campaign/econ/contract/Bid	com/fs/starfarer/campaign/econ/con
 	f	remainingDuration	remainingDuration	F
 	f	smuggling	smuggling	Z
 c	com/fs/starfarer/campaign/econ/contract/CommodityFlow	com/fs/starfarer/campaign/econ/contract/CommodityFlow
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	SAMPLING_INTERVAL	SAMPLING_INTERVAL	F
 	f	commodityId	commodityId	Ljava/lang/String;
 	f	marketId	marketId	Ljava/lang/String;
@@ -479,22 +466,15 @@ c	com/fs/starfarer/campaign/econ/contract/CommodityFlow	com/fs/starfarer/campaig
 	m	getExportHistory	getExportHistory	()Lcom/fs/starfarer/campaign/ValueHistory;
 	m	getCommodity	getCommodity	()Lcom/fs/starfarer/campaign/econ/CommodityOnMarket;
 c	com/fs/starfarer/campaign/econ/contract/CommodityFlow$1	com/fs/starfarer/campaign/econ/contract/CommodityFlow$IncomingQuantityComparator
-	c 来源(javap取证) | 置信度(中) | 证据(CommodityFlow内部类：Comparator<TransferTotal> 按 quantity 降序（signum(b.quantity-a.quantity)），getSortedIncoming 使用；与 linux 同类内容复核一致)
 	m	o00000	compare	(Lcom/fs/starfarer/campaign/econ/contract/CommodityFlow$TransferTotal;Lcom/fs/starfarer/campaign/econ/contract/CommodityFlow$TransferTotal;)I
 	f	this$0	this$0	Lcom/fs/starfarer/campaign/econ/contract/CommodityFlow;
-		c javap 字节码取证 | 高 | 匿名类合成外围引用
 c	com/fs/starfarer/campaign/econ/contract/CommodityFlow$2	com/fs/starfarer/campaign/econ/contract/CommodityFlow$OutgoingQuantityComparator
-	c 来源(javap取证) | 置信度(中) | 证据(CommodityFlow内部类：Comparator<TransferTotal> 按 quantity 降序（signum(b.quantity-a.quantity)），getSortedOutgoing 使用；与 linux 同类内容复核一致)
 	m	o00000	compare	(Lcom/fs/starfarer/campaign/econ/contract/CommodityFlow$TransferTotal;Lcom/fs/starfarer/campaign/econ/contract/CommodityFlow$TransferTotal;)I
 	f	this$0	this$0	Lcom/fs/starfarer/campaign/econ/contract/CommodityFlow;
-		c javap 字节码取证 | 高 | 匿名类合成外围引用
 c	com/fs/starfarer/campaign/econ/contract/CommodityFlow$3	com/fs/starfarer/campaign/econ/contract/CommodityFlow$QuantityAscendingComparator
-	c 来源(javap取证) | 置信度(中) | 证据(CommodityFlow内部类：Comparator<TransferTotal> 按 quantity 升序（a.quantity-b.quantity），findTop 的 PriorityQueue 使用；与 linux 同类内容复核一致)
 	m	o00000	compare	(Lcom/fs/starfarer/campaign/econ/contract/CommodityFlow$TransferTotal;Lcom/fs/starfarer/campaign/econ/contract/CommodityFlow$TransferTotal;)I
 	f	this$0	this$0	Lcom/fs/starfarer/campaign/econ/contract/CommodityFlow;
-		c javap 字节码取证 | 高 | 匿名类合成外围引用
 c	com/fs/starfarer/campaign/econ/contract/CommodityFlow$TransferItem	com/fs/starfarer/campaign/econ/contract/CommodityFlow$TransferItem
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	quantity	quantity	I
 	f	price	price	I
 	f	elapsed	elapsed	F
@@ -502,7 +482,6 @@ c	com/fs/starfarer/campaign/econ/contract/CommodityFlow$TransferItem	com/fs/star
 	m	getPrice	getPrice	()F
 	m	getElapsed	getElapsed	()F
 c	com/fs/starfarer/campaign/econ/contract/CommodityFlow$TransferTotal	com/fs/starfarer/campaign/econ/contract/CommodityFlow$TransferTotal
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	commodityId	commodityId	Ljava/lang/String;
 	f	quantity	quantity	I
 	f	price	price	I
@@ -520,7 +499,6 @@ c	com/fs/starfarer/campaign/econ/contract/CommodityFlow$TransferTotal	com/fs/sta
 	m	setSmuggled	setSmuggled	(Z)V
 	m	getCommoditySpec	getCommoditySpec	()Lcom/fs/starfarer/loading/OOoOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO;
 c	com/fs/starfarer/campaign/econ/contract/CommodityFlow$TransferTracker	com/fs/starfarer/campaign/econ/contract/CommodityFlow$TransferTracker
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	transfers	transfers	Ljava/util/List;
 	f	s	s	Ljava/lang/String;
 	m	getTransfers	getTransfers	()Ljava/util/List;
@@ -529,13 +507,11 @@ c	com/fs/starfarer/campaign/econ/contract/CommodityFlow$TransferTracker	com/fs/s
 	m	getTotalPrice	getTotalPrice	()I
 	m	advance	advance	(FF)V
 c	com/fs/starfarer/campaign/econ/contract/Contract	com/fs/starfarer/campaign/econ/contract/Contract
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	market	market	Lcom/fs/starfarer/campaign/econ/Market;
 	f	demandClass	demandClass	Ljava/lang/String;
 	f	bestBid	bestBid	Lcom/fs/starfarer/campaign/econ/contract/Bid;
 	f	quantity	quantity	I
 c	com/fs/starfarer/campaign/econ/contract/ContractEconomy	com/fs/starfarer/campaign/econ/contract/ContractEconomy
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	INITIAL_CONTRACT_SIZE_MULT	INITIAL_CONTRACT_SIZE_MULT	F
 	f	PROGRESSIVE_CONTRACT_SIZE_MULT	PROGRESSIVE_CONTRACT_SIZE_MULT	F
 	f	SELF_SALE_PROFIT_MULT	SELF_SALE_PROFIT_MULT	F
@@ -571,7 +547,6 @@ c	com/fs/starfarer/campaign/econ/contract/ContractEconomy	com/fs/starfarer/campa
 	m	doRoundOfBids	doRoundOfBids	(Ljava/lang/String;Lcom/fs/starfarer/campaign/econ/Market;)V
 	m	processBidResults	processBidResults	(Ljava/util/List;Z)Z
 c	com/fs/starfarer/campaign/econ/contract/ContractEconomy$TempCommodityData	com/fs/starfarer/campaign/econ/contract/ContractEconomy$TempCommodityData
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	maxContractSize	maxContractSize	F
 	f	lastContractSize	lastContractSize	F
 	f	availableForSale	availableForSale	F
@@ -580,7 +555,6 @@ c	com/fs/starfarer/campaign/econ/contract/ContractEconomy$TempCommodityData	com/
 	f	lastContractFulfilled	lastContractFulfilled	Z
 	f	boughtFrom	boughtFrom	Ljava/util/Set;
 c	com/fs/starfarer/campaign/econ/contract/ExistingMarketContracts	com/fs/starfarer/campaign/econ/contract/ExistingMarketContracts
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	market	market	Lcom/fs/starfarer/campaign/econ/Market;
 	f	bids	bids	Ljava/util/Map;
 	f	contracts	contracts	Ljava/util/Map;
@@ -593,17 +567,12 @@ c	com/fs/starfarer/campaign/econ/contract/ExistingMarketContracts	com/fs/starfar
 	m	removeContract	removeContract	(Ljava/lang/String;Lcom/fs/starfarer/campaign/econ/contract/Contract;)V
 	m	getSortedContracts	getSortedContracts	(Ljava/lang/String;)Ljava/util/List;
 c	com/fs/starfarer/campaign/econ/contract/ExistingMarketContracts$1	com/fs/starfarer/campaign/econ/contract/ExistingMarketContracts$BidQuantityComparator
-	c 来源(javap取证) | 置信度(中) | 证据(ExistingMarketContracts内部类：Comparator<Bid> 按 bid.contract.quantity 降序（signum）；与 linux 同类内容复核一致)
 	m	o00000	compare	(Lcom/fs/starfarer/campaign/econ/contract/Bid;Lcom/fs/starfarer/campaign/econ/contract/Bid;)I
 	f	this$0	this$0	Lcom/fs/starfarer/campaign/econ/contract/ExistingMarketContracts;
-		c javap 字节码取证 | 高 | 匿名类合成外围引用
 c	com/fs/starfarer/campaign/econ/contract/ExistingMarketContracts$2	com/fs/starfarer/campaign/econ/contract/ExistingMarketContracts$ContractQuantityComparator
-	c 来源(javap取证) | 置信度(中) | 证据(ExistingMarketContracts内部类：Comparator<Contract> 按 quantity 降序（signum）；与 linux 同类内容复核一致)
 	m	o00000	compare	(Lcom/fs/starfarer/campaign/econ/contract/Contract;Lcom/fs/starfarer/campaign/econ/contract/Contract;)I
 	f	this$0	this$0	Lcom/fs/starfarer/campaign/econ/contract/ExistingMarketContracts;
-		c javap 字节码取证 | 高 | 匿名类合成外围引用
 c	com/fs/starfarer/campaign/econ/contract/iter/ContractEconomyStepper	com/fs/starfarer/campaign/econ/contract/iter/ContractEconomyStepper
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	tasks	tasks	Ljava/util/List;
 	f	contractEconomy	contractEconomy	Lcom/fs/starfarer/campaign/econ/contract/ContractEconomy;
 	f	state	state	Lcom/fs/starfarer/campaign/econ/contract/iter/ContractEconomyStepper$State;
@@ -616,20 +585,15 @@ c	com/fs/starfarer/campaign/econ/contract/iter/ContractEconomyStepper	com/fs/sta
 	m	createTasks	createTasks	()V
 	m	isDone	isDone	()Z
 c	com/fs/starfarer/campaign/econ/contract/iter/ContractEconomyStepper$1	com/fs/starfarer/campaign/econ/contract/iter/ContractEconomyStepper$EconomyTierComparator
-	c 来源(javap取证) | 置信度(中) | 证据(ContractEconomyStepper内部类：Comparator<loading.F> 按 getEconomyTier 排序商品；与 linux 同类内容复核一致)
 	m	super	compare	(Lcom/fs/starfarer/loading/OOoOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO;Lcom/fs/starfarer/loading/OOoOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO;)I
 	f	this$0	this$0	Lcom/fs/starfarer/campaign/econ/contract/iter/ContractEconomyStepper;
-		c javap 字节码取证 | 高 | 匿名类合成外围引用
 c	com/fs/starfarer/campaign/econ/contract/iter/ContractEconomyStepper$State	com/fs/starfarer/campaign/econ/contract/iter/ContractEconomyStepper$State
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	WAITING	WAITING	Lcom/fs/starfarer/campaign/econ/contract/iter/ContractEconomyStepper$State;
 	f	DOING_TASKS	DOING_TASKS	Lcom/fs/starfarer/campaign/econ/contract/iter/ContractEconomyStepper$State;
 	m	values	values	()[Lcom/fs/starfarer/campaign/econ/contract/iter/ContractEconomyStepper$State;
 	m	valueOf	valueOf	(Ljava/lang/String;)Lcom/fs/starfarer/campaign/econ/contract/iter/ContractEconomyStepper$State;
 	f	ENUM$VALUES	$VALUES	[Lcom/fs/starfarer/campaign/econ/contract/iter/ContractEconomyStepper$State;
-		c javap 字节码取证 | 高 | 标准枚举 $VALUES 数组
 c	com/fs/starfarer/campaign/econ/contract/iter/ContractsAndBidsTask	com/fs/starfarer/campaign/econ/contract/iter/ContractsAndBidsTask
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	MAX_ITER	MAX_ITER	I
 	f	econ	econ	Lcom/fs/starfarer/campaign/econ/contract/ContractEconomy;
 	f	demandClass	demandClass	Ljava/lang/String;
@@ -643,7 +607,6 @@ c	com/fs/starfarer/campaign/econ/contract/iter/ContractsAndBidsTask	com/fs/starf
 	m	isDone	isDone	()Z
 	m	getLoggingIdentifier	getLoggingIdentifier	()Ljava/lang/String;
 c	com/fs/starfarer/campaign/econ/contract/iter/ContractsAndBidsTask$State	com/fs/starfarer/campaign/econ/contract/iter/ContractsAndBidsTask$State
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	INITIAL_PREP	INITIAL_PREP	Lcom/fs/starfarer/campaign/econ/contract/iter/ContractsAndBidsTask$State;
 	f	EXISTING	EXISTING	Lcom/fs/starfarer/campaign/econ/contract/iter/ContractsAndBidsTask$State;
 	f	GEN_CONTRACTS	GEN_CONTRACTS	Lcom/fs/starfarer/campaign/econ/contract/iter/ContractsAndBidsTask$State;
@@ -655,9 +618,7 @@ c	com/fs/starfarer/campaign/econ/contract/iter/ContractsAndBidsTask$State	com/fs
 	m	values	values	()[Lcom/fs/starfarer/campaign/econ/contract/iter/ContractsAndBidsTask$State;
 	m	valueOf	valueOf	(Ljava/lang/String;)Lcom/fs/starfarer/campaign/econ/contract/iter/ContractsAndBidsTask$State;
 	f	ENUM$VALUES	$VALUES	[Lcom/fs/starfarer/campaign/econ/contract/iter/ContractsAndBidsTask$State;
-		c javap 字节码取证 | 高 | 标准枚举 $VALUES 数组
 c	com/fs/starfarer/campaign/econ/contract/iter/MultiFrameTask	com/fs/starfarer/campaign/econ/contract/iter/MultiFrameTask
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	ticksPerSecond	ticksPerSecond	D
 	f	maxBudgetPerFrame	maxBudgetPerFrame	D
 	m	advance	advance	(F)V
@@ -665,7 +626,6 @@ c	com/fs/starfarer/campaign/econ/contract/iter/MultiFrameTask	com/fs/starfarer/c
 	m	isDone	isDone	()Z
 	m	getLoggingIdentifier	getLoggingIdentifier	()Ljava/lang/String;
 c	com/fs/starfarer/campaign/econ/contract/iter/PrepStockpilesTask	com/fs/starfarer/campaign/econ/contract/iter/PrepStockpilesTask
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	markets	markets	Ljava/util/List;
 	f	index	index	I
 	f	econ	econ	Lcom/fs/starfarer/campaign/econ/contract/ContractEconomy;
@@ -675,7 +635,6 @@ c	com/fs/starfarer/campaign/econ/contract/iter/PrepStockpilesTask	com/fs/starfar
 	m	isDone	isDone	()Z
 	m	getLoggingIdentifier	getLoggingIdentifier	()Ljava/lang/String;
 c	com/fs/starfarer/campaign/econ/contract/iter/ReapplyConditionsTask	com/fs/starfarer/campaign/econ/contract/iter/ReapplyConditionsTask
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	economy	economy	Lcom/fs/starfarer/campaign/econ/Economy;
 	f	markets	markets	Ljava/util/List;
 	f	index	index	I
@@ -683,7 +642,6 @@ c	com/fs/starfarer/campaign/econ/contract/iter/ReapplyConditionsTask	com/fs/star
 	m	isDone	isDone	()Z
 	m	getLoggingIdentifier	getLoggingIdentifier	()Ljava/lang/String;
 c	com/fs/starfarer/campaign/econ/contract/iter/UpdateConnectionWeightsTask	com/fs/starfarer/campaign/econ/contract/iter/UpdateConnectionWeightsTask
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	economy	economy	Lcom/fs/starfarer/campaign/econ/Economy;
 	f	markets	markets	Ljava/util/List;
 	f	index	index	I
@@ -691,7 +649,6 @@ c	com/fs/starfarer/campaign/econ/contract/iter/UpdateConnectionWeightsTask	com/f
 	m	isDone	isDone	()Z
 	m	getLoggingIdentifier	getLoggingIdentifier	()Ljava/lang/String;
 c	com/fs/starfarer/campaign/econ/contract/iter/UpdateDemandMetConditionsStabilityPriceMult	com/fs/starfarer/campaign/econ/contract/iter/UpdateDemandMetConditionsStabilityPriceMult
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	economy	economy	Lcom/fs/starfarer/campaign/econ/contract/ContractEconomy;
 	f	markets	markets	Ljava/util/List;
 	f	index	index	I
@@ -699,7 +656,6 @@ c	com/fs/starfarer/campaign/econ/contract/iter/UpdateDemandMetConditionsStabilit
 	m	isDone	isDone	()Z
 	m	getLoggingIdentifier	getLoggingIdentifier	()Ljava/lang/String;
 c	com/fs/starfarer/campaign/econ/contract/iter/UpdateDemandMetTask	com/fs/starfarer/campaign/econ/contract/iter/UpdateDemandMetTask
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	economy	economy	Lcom/fs/starfarer/campaign/econ/Economy;
 	f	markets	markets	Ljava/util/List;
 	f	index	index	I
@@ -707,7 +663,6 @@ c	com/fs/starfarer/campaign/econ/contract/iter/UpdateDemandMetTask	com/fs/starfa
 	m	isDone	isDone	()Z
 	m	getLoggingIdentifier	getLoggingIdentifier	()Ljava/lang/String;
 c	com/fs/starfarer/campaign/econ/contract/iter/UpdateGreedTask	com/fs/starfarer/campaign/econ/contract/iter/UpdateGreedTask
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	markets	markets	Ljava/util/List;
 	f	index	index	I
 	f	econ	econ	Lcom/fs/starfarer/campaign/econ/contract/ContractEconomy;
@@ -717,7 +672,6 @@ c	com/fs/starfarer/campaign/econ/contract/iter/UpdateGreedTask	com/fs/starfarer/
 	m	isDone	isDone	()Z
 	m	getLoggingIdentifier	getLoggingIdentifier	()Ljava/lang/String;
 c	com/fs/starfarer/campaign/econ/contract/iter/UpdateOutpostRelatedDemandTask	com/fs/starfarer/campaign/econ/contract/iter/UpdateOutpostRelatedDemandTask
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	economy	economy	Lcom/fs/starfarer/campaign/econ/contract/ContractEconomy;
 	f	markets	markets	Ljava/util/List;
 	f	index	index	I
@@ -726,7 +680,6 @@ c	com/fs/starfarer/campaign/econ/contract/iter/UpdateOutpostRelatedDemandTask	co
 	m	isDone	isDone	()Z
 	m	getLoggingIdentifier	getLoggingIdentifier	()Ljava/lang/String;
 c	com/fs/starfarer/campaign/econ/contract/iter/UpdatePriceMultTask	com/fs/starfarer/campaign/econ/contract/iter/UpdatePriceMultTask
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	economy	economy	Lcom/fs/starfarer/campaign/econ/Economy;
 	f	markets	markets	Ljava/util/List;
 	f	index	index	I
@@ -734,7 +687,6 @@ c	com/fs/starfarer/campaign/econ/contract/iter/UpdatePriceMultTask	com/fs/starfa
 	m	isDone	isDone	()Z
 	m	getLoggingIdentifier	getLoggingIdentifier	()Ljava/lang/String;
 c	com/fs/starfarer/campaign/econ/contract/iter/UpdatePricesTask	com/fs/starfarer/campaign/econ/contract/iter/UpdatePricesTask
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	economy	economy	Lcom/fs/starfarer/campaign/econ/Economy;
 	f	markets	markets	Ljava/util/List;
 	f	index	index	I
@@ -743,7 +695,6 @@ c	com/fs/starfarer/campaign/econ/contract/iter/UpdatePricesTask	com/fs/starfarer
 	m	isDone	isDone	()Z
 	m	getLoggingIdentifier	getLoggingIdentifier	()Ljava/lang/String;
 c	com/fs/starfarer/campaign/econ/reach/CommodityMarketData	com/fs/starfarer/campaign/econ/reach/CommodityMarketData
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	COM_FACTOR	COM_FACTOR	F
 	f	BASE_ACCESSIBILITY	BASE_ACCESSIBILITY	F
 	f	SAME_FACTION_BONUS	SAME_FACTION_BONUS	F
@@ -789,29 +740,22 @@ c	com/fs/starfarer/campaign/econ/reach/CommodityMarketData	com/fs/starfarer/camp
 	m	getMarketSharePercentPerFaction	getMarketSharePercentPerFaction	()Ljava/util/Map;
 	m	getMarketShareData	getMarketShareData	(Lcom/fs/starfarer/api/campaign/econ/MarketAPI;)Lcom/fs/starfarer/api/campaign/econ/MarketShareDataAPI;
 c	com/fs/starfarer/campaign/econ/reach/CommodityMarketData$1	com/fs/starfarer/campaign/econ/reach/CommodityMarketData$ExportMarketShareComparator
-	c 来源(javap取证) | 置信度(高) | 证据(CommodityMarketData内部类：Comparator<MarketShareDataAPI> 按 getExportMarketShare 排序；与 linux 同类内容复核一致)
 	m	super	compare	(Lcom/fs/starfarer/api/campaign/econ/MarketShareDataAPI;Lcom/fs/starfarer/api/campaign/econ/MarketShareDataAPI;)I
 	f	this$0	this$0	Lcom/fs/starfarer/campaign/econ/reach/CommodityMarketData;
-		c javap 字节码取证 | 高 | 匿名类合成外围引用
 c	com/fs/starfarer/campaign/econ/reach/CommodityMarketData$2	com/fs/starfarer/campaign/econ/reach/CommodityMarketData$MarketValueFractionComparator
-	c 来源(javap取证) | 置信度(高) | 证据(CommodityMarketData内部类：Comparator<MarketShareDataAPI> 按 getMarketValueFraction 排序；与 linux 同类内容复核一致)
 	m	super	compare	(Lcom/fs/starfarer/api/campaign/econ/MarketShareDataAPI;Lcom/fs/starfarer/api/campaign/econ/MarketShareDataAPI;)I
 	f	this$0	this$0	Lcom/fs/starfarer/campaign/econ/reach/CommodityMarketData;
-		c javap 字节码取证 | 高 | 匿名类合成外围引用
 c	com/fs/starfarer/campaign/econ/reach/CommodityMarketData$o	com/fs/starfarer/campaign/econ/reach/CommodityMarketData$FactionSizeData
-	c 来源(javap取证) | 置信度(中) | 证据(CommodityMarketData内部类：统计市场群各阵营规模（market.getSize()-2 求和）与敌对阵营规模，getExportMarketSharePercent 使用；与 linux 同类内容复核一致，字段混淆名不同)
 	f	Ò00000	totalSize	F
 	f	o00000	sizePerFaction	Ljava/util/Map;
 	f	Object	hostileSizePerFaction	Ljava/util/Map;
 c	com/fs/starfarer/campaign/econ/reach/FinishEconomyUpdateTask	com/fs/starfarer/campaign/econ/reach/FinishEconomyUpdateTask
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	economy	economy	Lcom/fs/starfarer/campaign/econ/Economy;
 	f	done	done	Z
 	m	doNextBatch	doNextBatch	()V
 	m	isDone	isDone	()Z
 	m	getLoggingIdentifier	getLoggingIdentifier	()Ljava/lang/String;
 c	com/fs/starfarer/campaign/econ/reach/ImmigrationTask	com/fs/starfarer/campaign/econ/reach/ImmigrationTask
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	economy	economy	Lcom/fs/starfarer/campaign/econ/reach/ReachEconomy;
 	f	markets	markets	Ljava/util/List;
 	f	uiUpdateOnly	uiUpdateOnly	Z
@@ -819,18 +763,15 @@ c	com/fs/starfarer/campaign/econ/reach/ImmigrationTask	com/fs/starfarer/campaign
 	m	isDone	isDone	()Z
 	m	getLoggingIdentifier	getLoggingIdentifier	()Ljava/lang/String;
 c	com/fs/starfarer/campaign/econ/reach/MainWorkTask	com/fs/starfarer/campaign/econ/reach/MainWorkTask
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	m	doNextBatch	doNextBatch	()V
 	m	getLoggingIdentifier	getLoggingIdentifier	()Ljava/lang/String;
 	m	isDone	isDone	()Z
 c	com/fs/starfarer/campaign/econ/reach/MainWorkTask$EconWorkParams	com/fs/starfarer/campaign/econ/reach/MainWorkTask$EconWorkParams
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	withIncomeAndUpkeep	withIncomeAndUpkeep	Z
 	f	withStockpileUpdate	withStockpileUpdate	Z
 	f	forceNonUIStep	forceNonUIStep	Z
 	f	withImmigration	withImmigration	Z
 c	com/fs/starfarer/campaign/econ/reach/MainWorkTask2	com/fs/starfarer/campaign/econ/reach/MainWorkTask2
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	economy	economy	Lcom/fs/starfarer/campaign/econ/reach/ReachEconomy;
 	f	markets	markets	Ljava/util/List;
 	f	commodities	commodities	Ljava/util/List;
@@ -846,12 +787,9 @@ c	com/fs/starfarer/campaign/econ/reach/MainWorkTask2	com/fs/starfarer/campaign/e
 	m	isDone	isDone	()Z
 	m	getLoggingIdentifier	getLoggingIdentifier	()Ljava/lang/String;
 c	com/fs/starfarer/campaign/econ/reach/MainWorkTask2$1	com/fs/starfarer/campaign/econ/reach/MainWorkTask2$CommodityTierComparator
-	c 来源(javap取证) | 置信度(中) | 证据(MainWorkTask2内部类：Comparator<String> 按商品 getEconomyTier 排序商品 id；与 linux 同类内容复核一致)
 	m	o00000	compare	(Ljava/lang/String;Ljava/lang/String;)I
 	f	this$0	this$0	Lcom/fs/starfarer/campaign/econ/reach/MainWorkTask2;
-		c javap 字节码取证 | 高 | 匿名类合成外围引用
 c	com/fs/starfarer/campaign/econ/reach/MarketShareData	com/fs/starfarer/campaign/econ/reach/MarketShareData
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	source	source	Lcom/fs/starfarer/api/campaign/econ/CommoditySourceType;
 	f	sourceIsIllegal	sourceIsIllegal	Z
 	f	exportMarketShare	exportMarketShare	F
@@ -865,7 +803,6 @@ c	com/fs/starfarer/campaign/econ/reach/MarketShareData	com/fs/starfarer/campaign
 	m	getMarketValueFraction	getMarketValueFraction	()F
 	m	setMarketValueFraction	setMarketValueFraction	(F)V
 c	com/fs/starfarer/campaign/econ/reach/ReachEconomy	com/fs/starfarer/campaign/econ/reach/ReachEconomy
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	WITH_REACH	WITH_REACH	Z
 	f	markets	markets	Ljava/util/List;
 	f	locationToMarket	locationToMarket	Lcom/fs/starfarer/api/util/ListMap;
@@ -889,7 +826,6 @@ c	com/fs/starfarer/campaign/econ/reach/ReachEconomy	com/fs/starfarer/campaign/ec
 	m	nextStep	nextStep	(Lcom/fs/starfarer/campaign/econ/reach/MainWorkTask$EconWorkParams;)V
 	m	main	main	([Ljava/lang/String;)V
 c	com/fs/starfarer/campaign/econ/reach/ReachEconomyStepper	com/fs/starfarer/campaign/econ/reach/ReachEconomyStepper
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	tasks	tasks	Ljava/util/List;
 	f	econ	econ	Lcom/fs/starfarer/campaign/econ/reach/ReachEconomy;
 	f	state	state	Lcom/fs/starfarer/campaign/econ/reach/ReachEconomyStepper$State;
@@ -906,22 +842,18 @@ c	com/fs/starfarer/campaign/econ/reach/ReachEconomyStepper	com/fs/starfarer/camp
 	m	createTasks	createTasks	()V
 	m	isDone	isDone	()Z
 c	com/fs/starfarer/campaign/econ/reach/ReachEconomyStepper$State	com/fs/starfarer/campaign/econ/reach/ReachEconomyStepper$State
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	WAITING	WAITING	Lcom/fs/starfarer/campaign/econ/reach/ReachEconomyStepper$State;
 	f	DOING_TASKS	DOING_TASKS	Lcom/fs/starfarer/campaign/econ/reach/ReachEconomyStepper$State;
 	m	values	values	()[Lcom/fs/starfarer/campaign/econ/reach/ReachEconomyStepper$State;
 	m	valueOf	valueOf	(Ljava/lang/String;)Lcom/fs/starfarer/campaign/econ/reach/ReachEconomyStepper$State;
 	f	ENUM$VALUES	$VALUES	[Lcom/fs/starfarer/campaign/econ/reach/ReachEconomyStepper$State;
-		c javap 字节码取证 | 高 | 标准枚举 $VALUES 数组
 c	com/fs/starfarer/campaign/econ/reach/UpdateMarketsAgainTask	com/fs/starfarer/campaign/econ/reach/UpdateMarketsAgainTask
-	c 来源(未混淆类名) | 置信度(高) | 证据(DoNotObfuscate 接口，类名与成员名未混淆)
 	f	markets	markets	Ljava/util/List;
 	f	marketIndex	marketIndex	I
 	m	doNextBatch	doNextBatch	()V
 	m	isDone	isDone	()Z
 	m	getLoggingIdentifier	getLoggingIdentifier	()Ljava/lang/String;
 c	com/fs/starfarer/campaign/econ/reach/super	com/fs/starfarer/campaign/econ/reach/MarketReachabilityGraph
-	c 来源(javap取证) | 置信度(中) | 证据(市场连通性图：按市场间距离（LY）与阵营关系构建节点连接，isConnected 查询连通性；类无外部引用，疑似遗留；与 linux 同类内容复核一致)
 	f	Ò00000	markets	Ljava/util/List;
 	f	super	nodesById	Ljava/util/Map;
 	m	o00000	rebuild	()V
@@ -930,17 +862,13 @@ c	com/fs/starfarer/campaign/econ/reach/super	com/fs/starfarer/campaign/econ/reac
 	m	o00000	isConnectedRecursive	(Lcom/fs/starfarer/campaign/econ/reach/super$o;Lcom/fs/starfarer/campaign/econ/reach/super$o;Ljava/util/Set;Lcom/fs/starfarer/campaign/econ/reach/super$o;)Z
 	m	o00000	getOrCreateNode	(Lcom/fs/starfarer/api/campaign/econ/MarketAPI;)Lcom/fs/starfarer/campaign/econ/reach/super$o;
 c	com/fs/starfarer/campaign/econ/reach/super$o	com/fs/starfarer/campaign/econ/reach/MarketReachabilityGraph$Node
-	c 来源(javap取证) | 置信度(中) | 证据(连通性图节点：持有市场与三组邻接集合；部分字段语义不明，仅映射 market；与 linux 同类内容复核一致)
 	f	Õ00000	market	Lcom/fs/starfarer/api/campaign/econ/MarketAPI;
 	f	Ô00000	unusedBoolean	Z
-		c javap 字节码取证 | 中 | 无任何读写点（构造器也不初始化），死字段
 c	com/fs/starfarer/campaign/econ/super	com/fs/starfarer/campaign/econ/EconomyLoader
-	c 来源(字符串常量+调用关系) | 置信度(高) | 证据(经济数据加载器："Loading economy data from"、读取 defaultTariff/initialStepsToRun/starSystems JSON key，构建 ReachEconomy；与 linux oOOO 内容复核一致)
 	m	o00000	getCommoditySpec	(Ljava/lang/String;)Lcom/fs/starfarer/loading/OOoOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO;
 	m	o00000	getAllCommoditySpecs	()Ljava/util/Map;
 	m	o00000	loadReachEconomy	(Ljava/lang/String;ZZLcom/fs/starfarer/campaign/econ/super$o;)Lcom/fs/starfarer/campaign/econ/reach/ReachEconomy;
 	m	o00000	loadReachEconomy	(Lorg/json/JSONObject;Ljava/lang/String;ZZLcom/fs/starfarer/campaign/econ/super$o;)Lcom/fs/starfarer/campaign/econ/reach/ReachEconomy;
 	m	o00000	main	([Ljava/lang/String;)V
 c	com/fs/starfarer/campaign/econ/super$o	com/fs/starfarer/campaign/econ/EconomyLoader$ProgressCallback
-	c 来源(调用关系) | 置信度(中) | 证据(super 内部接口：加载循环中按 (当前步, 总步数) 回调，进度上报；与 linux oOOO$o 内容复核一致)
 	m	super	reportProgress	(II)V
