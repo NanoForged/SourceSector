@@ -6,8 +6,9 @@
 ## 平台约定
 
 mapping 以 **windows 为唯一基准平台**（单平台收敛）：生成与校验只消费
-`*-windows.tiny` 片段；linux 片段文件保留作历史参考，不进入构建，
-跨平台 remap 由 NanoForged 承担。
+`*-windows.tiny` 片段；linux 片段文件保留作历史参考，不进入构建。
+全平台统一部署 windows 版产物，跨平台运行时承载（natives / 启动环境）
+由 NanoForge 负责。
 
 ## 文件约定
 

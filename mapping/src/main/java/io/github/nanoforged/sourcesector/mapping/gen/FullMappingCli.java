@@ -34,7 +34,8 @@ import java.util.stream.Stream;
  * （混淆器会把继承成员引用挂在子类 owner 上），并产出漂移报告
  * {@code reportDir/mapping-drift-windows.txt}。
  * linux jar 仅做结构扫描，产出跨平台指纹对位报告
- * {@code reportDir/cross-platform-match.txt}（CI 门禁用；跨平台 remap 由 NanoForged 承担）。
+ * {@code reportDir/cross-platform-match.txt}（CI 门禁：验证「双平台 jar 无结构差异」前提；
+ * 全平台统一部署 windows 版产物，跨平台运行时承载由 NanoForge 负责）。
  * 生成是确定性的：同一输入两次运行输出字节一致。
  */
 public final class FullMappingCli {
@@ -76,7 +77,7 @@ public final class FullMappingCli {
             // 双平台都扫描：linux 侧结构供跨平台指纹对位报告（CI 门禁）使用。
             classesByPlatform.put(platform, classes);
             if (platform != MappingPlatform.WINDOWS) {
-                // 单平台收敛：全量表只以 windows 为基准生成，跨平台 remap 由 NanoForged 承担。
+                // 单平台收敛：全量表只以 windows 为基准生成；全平台统一部署 windows 版产物。
                 continue;
             }
 

@@ -58,7 +58,7 @@ public final class UsageScanCli {
 
         for (MappingPlatform platform : MappingPlatform.values()) {
             if (platform != MappingPlatform.WINDOWS) {
-                // 单平台收敛：只按 windows 基准的全量表扫描，跨平台一致性由 NanoForged 承担。
+                // 单平台收敛：只按 windows 基准的全量表扫描；全平台统一部署 windows 版产物。
                 continue;
             }
             Path fullMappingFile = generatedMappingsDir

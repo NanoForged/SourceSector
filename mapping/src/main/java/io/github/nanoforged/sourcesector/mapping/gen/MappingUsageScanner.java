@@ -36,7 +36,7 @@ import java.util.zip.ZipFile;
  * <ul>
  *     <li>{@code semantic}——人工表 / scope 片段已语义命名；</li>
  *     <li>{@code identity}——保持原名类及其成员（原名即 named）；</li>
- *     <li>{@code promoted}——生成层自动提升的原始名（跨平台一致性不受保证，
+ *     <li>{@code promoted}——生成层自动提升的原始名（未经人工语义审定，
  *     消费侧引用它属于纪律违规，应迁入人工表）；</li>
  *     <li>{@code placeholder}——哈希占位名（严重违规，理论上不应出现）。</li>
  * </ul>
@@ -264,7 +264,7 @@ public final class MappingUsageScanner {
         }
 
         lines.add("");
-        lines.add("## 提升名引用（跨平台一致性不受保证，建议迁入人工表）");
+        lines.add("## 提升名引用（未经人工语义审定，建议迁入人工表）");
         if (promotedReferences.isEmpty()) {
             lines.add("（无）");
         } else {

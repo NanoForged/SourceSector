@@ -17,7 +17,7 @@ tasks.withType<JavaCompile>().configureEach {
 val starsectorGameDir = providers.gradleProperty("starsector.gameDir").orNull?.takeIf { it.isNotBlank() }
 
 // 单平台收敛：mapping 只以 windows 为基准（obf jar / 全量表 / named jar 均为 windows 侧），
-// 跨平台 remap 由 NanoForged 承担；需要显式覆盖时传 -Pstarsector.platform=<platform>。
+// 跨平台运行时承载（natives / 启动环境）由 NanoForge 负责；需要显式覆盖时传 -Pstarsector.platform=<platform>。
 val mappingPlatform = providers.gradleProperty("starsector.platform").orElse("windows")
 val namedGameJarsDir = mappingPlatform.map { platform ->
     rootProject.layout.buildDirectory.dir("named-game-jars/$platform").get().asFile
