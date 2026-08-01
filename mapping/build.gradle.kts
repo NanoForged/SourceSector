@@ -123,7 +123,7 @@ tasks.register<JavaExec>("generateFullMappings") {
     description = "Generate full (placeholder + human) mappings for both platforms from vendored game jars"
     dependsOn(tasks.named("classes"))
     classpath = sourceSets.main.get().runtimeClasspath
-    mainClass.set("github.kasuminova.ssoptimizer.mapping.gen.FullMappingCli")
+    mainClass.set("io.github.nanoforged.sourcesector.mapping.gen.FullMappingCli")
 
     val gameJarsRoot = rootProject.file("game-jars")
     val humanMappingsDir = file("src/main/resources/mappings")
@@ -148,7 +148,7 @@ tasks.register<JavaExec>("mergeScopeFragments") {
     description = "Validate scope mapping fragments (parse, jar consistency, cross-scope uniqueness) and write coverage report"
     dependsOn(tasks.named("classes"))
     classpath = sourceSets.main.get().runtimeClasspath
-    mainClass.set("github.kasuminova.ssoptimizer.mapping.gen.ScopeFragmentCli")
+    mainClass.set("io.github.nanoforged.sourcesector.mapping.gen.ScopeFragmentCli")
 
     val gameJarsRoot = rootProject.file("game-jars")
     val humanMappingsDir = file("src/main/resources/mappings")
@@ -172,7 +172,7 @@ tasks.register<JavaExec>("validateScopeFragment") {
     description = "Validate a single scope fragment file before submission: -Pfragment=<path-to-{scope}-{platform}.tiny>"
     dependsOn(tasks.named("classes"))
     classpath = sourceSets.main.get().runtimeClasspath
-    mainClass.set("github.kasuminova.ssoptimizer.mapping.gen.ScopeFragmentCli")
+    mainClass.set("io.github.nanoforged.sourcesector.mapping.gen.ScopeFragmentCli")
 
     val gameJarsRoot = rootProject.file("game-jars")
     val humanMappingsDir = file("src/main/resources/mappings")
@@ -198,7 +198,7 @@ tasks.register<JavaExec>("remapGameClasspathToNamed") {
     description = "Remap Starsector compile classpath jars to named namespace"
     dependsOn(tasks.named("classes"), "generateFullMappings")
     classpath = sourceSets.main.get().runtimeClasspath
-    mainClass.set("github.kasuminova.ssoptimizer.mapping.JarRemapCli")
+    mainClass.set("io.github.nanoforged.sourcesector.mapping.JarRemapCli")
     systemProperty("ssoptimizer.mapping.platform", mappingPlatform.get())
 
     // 消费构建期全量表（人工条目优先 + 占位名），tiny 源或生成器输入变更会触发重跑。
