@@ -91,6 +91,12 @@ c com/fs/starfarer/util/A/C com/fs/starfarer/util/InputEvent
 c com/fs/starfarer/settings/StarfarerSettings$1 com/fs/starfarer/settings/StarfarerSettings$SettingsTextFieldFactory
 c com/fs/starfarer/settings/StarfarerSettings com/fs/starfarer/settings/StarfarerSettings
 	m class getBoolean (Ljava/lang/String;)Z
+c com/fs/starfarer/loading/specs/EngineSlot com/fs/starfarer/loading/specs/EngineSlot
+	f this.super id Ljava/lang/String;
+	f Object.super color Ljava/awt/Color;
+	f for.super omegaMode Z
+	f return.super contrailSpeedMultAngVel F
+	f int.super contrailMinSegLength F
 c com/fs/starfarer/loading/LoadingUtils com/fs/starfarer/loading/LoadingUtils
 	m super readText (Ljava/io/InputStream;)Ljava/lang/String;
 c com/fs/starfarer/api/impl/campaign/terrain/BaseTiledTerrain com/fs/starfarer/api/impl/campaign/terrain/BaseTiledTerrain

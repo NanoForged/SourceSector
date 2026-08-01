@@ -6,7 +6,7 @@ c	com/fs/starfarer/campaign/ui/marketinfo/MarketInfoPanel$1	com/fs/starfarer/cam
 c	com/fs/starfarer/campaign/ui/marketinfo/MarketInfoPanel$2	com/fs/starfarer/campaign/ui/marketinfo/MarketInfoPanel$AmountComparator
 	m	compare	compare	(Ljava/lang/Object;Ljava/lang/Object;)I
 	f	this$0	this$0	Lcom/fs/starfarer/campaign/ui/marketinfo/MarketInfoPanel;
-	m	super	compareByMax	(Lcom/fs/starfarer/campaign/ui/marketinfo/C_9f8f94dd;Lcom/fs/starfarer/campaign/ui/marketinfo/C_9f8f94dd;)I
+	m	super	compareByMax	(Lcom/fs/starfarer/campaign/ui/marketinfo/OoO0;Lcom/fs/starfarer/campaign/ui/marketinfo/OoO0;)I
 c	com/fs/starfarer/campaign/ui/marketinfo/NearbyMarketDialog	com/fs/starfarer/campaign/ui/marketinfo/NearbyMarketDialog
 	m	actionPerformed	actionPerformed	(Ljava/lang/Object;Ljava/lang/Object;)V
 	m	advanceImpl	advanceImpl	(F)V
@@ -198,7 +198,7 @@ c	com/fs/starfarer/campaign/ui/marketinfo/Z	com/fs/starfarer/campaign/ui/marketi
 	f	ÖôØO00	baseUIColor	Ljava/awt/Color;
 	f	do.null$if	darkUIColor	Ljava/awt/Color;
 	f	ÓôØO00	gridUIColor	Ljava/awt/Color;
-	f	ÕõØO00	commodityRow	Lcom/fs/starfarer/campaign/ui/marketinfo/C_9f8f94dd;
+	f	ÕõØO00	commodityRow	Lcom/fs/starfarer/campaign/ui/marketinfo/OoO0;
 	m	o00000	addTextTooltip	(Lcom/fs/starfarer/ui/UIComponentBase;Ljava/lang/String;[Ljava/lang/String;)V
 c	com/fs/starfarer/campaign/ui/marketinfo/Z$o	com/fs/starfarer/campaign/ui/marketinfo/TradeDirection
 	f	new	IMPORT	Lcom/fs/starfarer/campaign/ui/marketinfo/TradeDirection;
@@ -247,7 +247,7 @@ c	com/fs/starfarer/campaign/ui/marketinfo/PlanetSurveyPanel	com/fs/starfarer/cam
 	f	void.new$if	playerFleet	Lcom/fs/starfarer/campaign/fleet/CampaignFleet;
 	f	ÕOØO00	fleetCargo	Lcom/fs/starfarer/api/campaign/CargoAPI;
 	f	super.new$if	surveyResultDisplay	Lcom/fs/starfarer/campaign/ui/marketinfo/SurveyResultDisplay;
-	f	õ0ØO00	availableResourcesPanel	Lcom/fs/starfarer/campaign/ui/marketinfo/C_d09889a8;
+	f	õ0ØO00	availableResourcesPanel	Lcom/fs/starfarer/campaign/ui/marketinfo/OOoO;
 	f	øøÖO00	coreUIHost	Lcom/fs/starfarer/coreui/CoreUIHost;
 	f	O0ØO00	outpostDialogState	Lcom/fs/starfarer/campaign/ui/marketinfo/PlanetSurveyPanel$OutpostDialogState;
 	f	if.super$if	isShowingSurveyResults	Z
@@ -619,7 +619,7 @@ c	com/fs/starfarer/campaign/ui/marketinfo/intsuper	com/fs/starfarer/campaign/ui/
 	f	String.int$if	legalityPanel	LIllegalGoodsPanel;
 	f	ÖõØO00	shippingPanel	Lcom/fs/starfarer/campaign/ui/marketinfo/ShippingPanel;
 	f	øõØO00	incomePanel	LEconomyPanel;
-	f	ôõØO00	accessibilityPanel	Lcom/fs/starfarer/campaign/ui/marketinfo/C_e82795b1;
+	f	ôõØO00	accessibilityPanel	Lcom/fs/starfarer/campaign/ui/marketinfo/H;
 c	com/fs/starfarer/campaign/ui/marketinfo/ifsuper	com/fs/starfarer/campaign/ui/marketinfo/LabelButton
 	m	advanceImpl	advanceImpl	(F)V
 	m	wrap	wrap	(Lcom/fs/starfarer/ui/d;)Lcom/fs/starfarer/ui/n;

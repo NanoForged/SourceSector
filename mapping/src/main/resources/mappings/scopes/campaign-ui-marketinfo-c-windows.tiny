@@ -316,7 +316,7 @@ c	com/fs/starfarer/campaign/ui/marketinfo/o	MarketInfoDetailView
 	f	void.while$float	gridUIColor	Ljava/awt/Color;
 	f	private.while$float	brightUIColor	Ljava/awt/Color;
 	f	øÕöO00	market	Lcom/fs/starfarer/campaign/econ/Market;
-	f	ÕÖöO00	commodityRow	Lcom/fs/starfarer/campaign/ui/marketinfo/C_9f8f94dd;
+	f	ÕÖöO00	commodityRow	Lcom/fs/starfarer/campaign/ui/marketinfo/OoO0;
 	f	ôÕöO00	width	F
 	f	ÓÖöO00	commodityNameLabel	Lcom/fs/starfarer/ui/LabelImpl;
 	f	if.while$float	commoditySubtitleLabel	Lcom/fs/starfarer/ui/LabelImpl;

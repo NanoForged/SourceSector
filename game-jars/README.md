@@ -21,7 +21,9 @@ game-jars/
 ## 来源
 
 - **Linux**: Starsector 0.98a-RC8 Linux 安装包原版
-- **Windows**: Starsector 0.98a-RC8 Windows 安装包原版（`starsector-core/` 目录）
+- **Windows**: Starsector 0.98a-RC8 **汉化版**（2026-07 起，用户手动替换；
+  汉化补丁改写了部分类的成员，jar 为确定性重打包，类时间戳 1970-01-01。
+  核实结论见 `docs/design/vendor-jar-audit.md`）
 
 这 4 个 jar 在 Linux 和 Windows 之间具有不同的混淆映射，因此需要分平台存放。
 游戏 classpath 上的其他第三方 jar（LWJGL、XStream 等）已通过 Gradle 依赖引入，
@@ -41,6 +43,6 @@ game-jars/
 
 ## 注意
 
-- 这些是**原版未修改**的游戏 jar，不包含本地化翻译
+- Linux 目录为**原版未修改**的游戏 jar；Windows 目录为汉化版 jar（见上方来源说明）
 - 更新游戏版本时需同步更新此目录中的 jar
 - 不要将这些 jar 用于分发或商业用途

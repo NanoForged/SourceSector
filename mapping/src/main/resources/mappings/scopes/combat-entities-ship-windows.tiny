@@ -137,7 +137,7 @@ c com/fs/starfarer/combat/entities/ship/A/String com/fs/starfarer/combat/entitie
 	f	super.super	weapon	Lcom/fs/starfarer/combat/systems/Weapon;
 	f	super	ship	Lcom/fs/starfarer/combat/entities/Ship;
 	f	private	hitGlowEmitter	Lcom/fs/starfarer/renderers/fx/HitGlowEmitter;
-	f	Õ00000	glowEffect	Lcom/fs/starfarer/combat/entities/ship/A/C_33d7ced3;
+	f	Õ00000	glowEffect	Lcom/fs/starfarer/combat/entities/ship/A/String$Oo;
 	f	õ00000	constantAlpha	Z
 	f	if	decalAlpha	F
 	f	ø00000	lastArmorFraction	F

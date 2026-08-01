@@ -98,22 +98,22 @@ c	com/fs/starfarer/coreui/refit/ooOO	com/fs/starfarer/coreui/refit/ShipStatsPane
 	f	Oöô000	shieldFluxDamButton	Lcom/fs/starfarer/ui/Button;
 	f	Óöô000	cloakButton	Lcom/fs/starfarer/ui/Button;
 	f	Ööô000	flightDecksButton	Lcom/fs/starfarer/ui/Button;
-	f	Òøô000	hullRow	Lcom/fs/starfarer/campaign/ui/marketinfo/C_a3ec9aa0;
-	f	do.do$String	armorRow	Lcom/fs/starfarer/campaign/ui/marketinfo/C_a3ec9aa0;
-	f	Óõô000	topSpeedRow	Lcom/fs/starfarer/campaign/ui/marketinfo/C_a3ec9aa0;
-	f	void.while$String	fluxCapacityRow	Lcom/fs/starfarer/campaign/ui/marketinfo/C_a3ec9aa0;
-	f	if.do$String	fluxDissipationRow	Lcom/fs/starfarer/campaign/ui/marketinfo/C_a3ec9aa0;
-	f	Öøô000	weaponFluxRow	Lcom/fs/starfarer/campaign/ui/marketinfo/C_a3ec9aa0;
-	f	Òõô000	shieldFluxRow	Lcom/fs/starfarer/campaign/ui/marketinfo/C_a3ec9aa0;
-	f	ôõô000	shieldArcRow	Lcom/fs/starfarer/campaign/ui/marketinfo/C_a3ec9aa0;
-	f	super.do$String	shieldFluxDamRow	Lcom/fs/starfarer/campaign/ui/marketinfo/C_a3ec9aa0;
-	f	øöô000	cloakRow	Lcom/fs/starfarer/campaign/ui/marketinfo/C_a3ec9aa0;
-	f	Õõô000	flightDecksRow	Lcom/fs/starfarer/campaign/ui/marketinfo/C_a3ec9aa0;
+	f	Òøô000	hullRow	Lcom/fs/starfarer/campaign/ui/marketinfo/L;
+	f	do.do$String	armorRow	Lcom/fs/starfarer/campaign/ui/marketinfo/L;
+	f	Óõô000	topSpeedRow	Lcom/fs/starfarer/campaign/ui/marketinfo/L;
+	f	void.while$String	fluxCapacityRow	Lcom/fs/starfarer/campaign/ui/marketinfo/L;
+	f	if.do$String	fluxDissipationRow	Lcom/fs/starfarer/campaign/ui/marketinfo/L;
+	f	Öøô000	weaponFluxRow	Lcom/fs/starfarer/campaign/ui/marketinfo/L;
+	f	Òõô000	shieldFluxRow	Lcom/fs/starfarer/campaign/ui/marketinfo/L;
+	f	ôõô000	shieldArcRow	Lcom/fs/starfarer/campaign/ui/marketinfo/L;
+	f	super.do$String	shieldFluxDamRow	Lcom/fs/starfarer/campaign/ui/marketinfo/L;
+	f	øöô000	cloakRow	Lcom/fs/starfarer/campaign/ui/marketinfo/L;
+	f	Õõô000	flightDecksRow	Lcom/fs/starfarer/campaign/ui/marketinfo/L;
 	f	Óøô000	delegate	Lcom/fs/starfarer/coreui/refit/ShipStatsPanel$VariantChangeListener;
 	f	Öõô000	ventsLabel	Lcom/fs/starfarer/ui/Button;
 	f	õõô000	capacitorsLabel	Lcom/fs/starfarer/ui/Button;
 	f	String.while$String	switchTable	[I
-	m	o00000	createRowButton	(Lcom/fs/starfarer/campaign/ui/marketinfo/C_a3ec9aa0;)Lcom/fs/starfarer/ui/Button;
+	m	o00000	createRowButton	(Lcom/fs/starfarer/campaign/ui/marketinfo/L;)Lcom/fs/starfarer/ui/Button;
 	m	new	createLabel	(Ljava/lang/String;Ljava/lang/String;Lcom/fs/starfarer/api/ui/Alignment;Ljava/awt/Color;)Lcom/fs/starfarer/ui/LabelImpl;
 	m	$SWITCH_TABLE$com$fs$starfarer$api$combat$ShipAPI$HullSize	switchTable	()[I
 c	com/fs/starfarer/coreui/refit/ooOO$1	com/fs/starfarer/coreui/refit/ShipStatsPanel$DebugTooltip

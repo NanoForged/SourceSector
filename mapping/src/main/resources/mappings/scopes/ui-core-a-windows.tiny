@@ -637,7 +637,7 @@ c	com/fs/starfarer/ui/g	com/fs/starfarer/ui/ScrollPanelImpl
 	f	private.this$public	dragStartYOffset	F
 	f	ÓÔÔo00	dragEvent	Lcom/fs/starfarer/util/InputEvent;
 	f	if.super$public	dragging	Z
-	f	super.super$public	contentContainer	Lcom/fs/starfarer/ui/C_2935f9d2;
+	f	super.super$public	contentContainer	Lcom/fs/starfarer/ui/g$Oo;
 	f	void.super$public	scrollbarFader	Lcom/fs/graphics/util/Fader;
 	f	String.super$public	scrollMouseButton	Lcom/fs/starfarer/ui/MouseButton;
 	f	ÖÒÔo00	scrollbarThumb	Lcom/fs/starfarer/ui/Panel;
