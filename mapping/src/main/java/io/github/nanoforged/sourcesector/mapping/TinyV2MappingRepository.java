@@ -25,19 +25,25 @@ public final class TinyV2MappingRepository implements MappingRepository {
 
     private final List<MappingEntry> entries;
     private final Map<String, MappingEntry> classByObfuscatedName;
+    private final Map<String, MappingEntry> classByIntermediaryName;
     private final Map<String, MappingEntry> classByNamedName;
     private final Map<String, MappingEntry> fieldByObfuscatedKey;
+    private final Map<String, MappingEntry> fieldByIntermediaryKey;
     private final Map<String, MappingEntry> fieldByNamedKey;
     private final Map<String, MappingEntry> methodByObfuscatedKey;
+    private final Map<String, MappingEntry> methodByIntermediaryKey;
     private final Map<String, MappingEntry> methodByNamedKey;
 
     private TinyV2MappingRepository(List<MappingEntry> entries) {
         this.entries = List.copyOf(entries);
         this.classByObfuscatedName = new LinkedHashMap<>();
+        this.classByIntermediaryName = new LinkedHashMap<>();
         this.classByNamedName = new LinkedHashMap<>();
         this.fieldByObfuscatedKey = new LinkedHashMap<>();
+        this.fieldByIntermediaryKey = new LinkedHashMap<>();
         this.fieldByNamedKey = new LinkedHashMap<>();
         this.methodByObfuscatedKey = new LinkedHashMap<>();
+        this.methodByIntermediaryKey = new LinkedHashMap<>();
         this.methodByNamedKey = new LinkedHashMap<>();
 
         for (MappingEntry entry : this.entries) {
@@ -46,7 +52,12 @@ public final class TinyV2MappingRepository implements MappingRepository {
             }
             validateNamespaceBoundary(entry);
             classByObfuscatedName.put(entry.obfuscatedName(), entry);
-            classByNamedName.put(entry.namedName(), entry);
+            if (entry.intermediaryName() != null) {
+                classByIntermediaryName.put(entry.intermediaryName(), entry);
+            }
+            if (entry.namedName() != null) {
+                classByNamedName.put(entry.namedName(), entry);
+            }
         }
 
         for (MappingEntry entry : this.entries) {
@@ -56,17 +67,42 @@ public final class TinyV2MappingRepository implements MappingRepository {
                 }
                 case FIELD -> {
                     fieldByObfuscatedKey.put(fieldKey(entry.ownerObfuscatedName(), entry.obfuscatedName()), entry);
-                    fieldByNamedKey.put(fieldKey(entry.ownerNamedName(), entry.namedName()), entry);
+                    if (entry.intermediaryName() != null) {
+                        String ownerIntermediary = intermediaryOwnerOf(entry.ownerObfuscatedName());
+                        if (ownerIntermediary != null) {
+                            fieldByIntermediaryKey.put(fieldKey(ownerIntermediary, entry.intermediaryName()), entry);
+                        }
+                    }
+                    if (entry.namedName() != null && entry.ownerNamedName() != null) {
+                        fieldByNamedKey.put(fieldKey(entry.ownerNamedName(), entry.namedName()), entry);
+                    }
                 }
                 case METHOD -> {
                     methodByObfuscatedKey.put(methodKey(
                             entry.ownerObfuscatedName(),
                             entry.obfuscatedName(),
                             toObfuscatedDescriptor(entry.descriptor())), entry);
-                    methodByNamedKey.put(methodKey(entry.ownerNamedName(), entry.namedName(), toNamedDescriptor(entry.descriptor())), entry);
+                    if (entry.intermediaryName() != null) {
+                        String ownerIntermediary = intermediaryOwnerOf(entry.ownerObfuscatedName());
+                        if (ownerIntermediary != null) {
+                            methodByIntermediaryKey.put(methodKey(
+                                    ownerIntermediary,
+                                    entry.intermediaryName(),
+                                    toObfuscatedDescriptor(entry.descriptor())), entry);
+                        }
+                    }
+                    if (entry.namedName() != null && entry.ownerNamedName() != null) {
+                        methodByNamedKey.put(methodKey(entry.ownerNamedName(), entry.namedName(), toNamedDescriptor(entry.descriptor())), entry);
+                    }
                 }
             }
         }
+    }
+
+    /** 解析成员条目的 owner 中间名（类索引已建立，直接查 obf 侧）。 */
+    private String intermediaryOwnerOf(String ownerObfuscatedName) {
+        MappingEntry owner = classByObfuscatedName.get(ownerObfuscatedName);
+        return owner == null ? null : owner.intermediaryName();
     }
 
     /**
@@ -212,6 +248,18 @@ public final class TinyV2MappingRepository implements MappingRepository {
             throw new MappingLookupException("Tiny v2 头部格式不正确: " + resourcePath);
         }
 
+        // 命名空间布局：双列人工层 `obf named`，三列全量表 `obf intermediary named`。
+        final boolean threeColumn;
+        if (headerTokens.length == 5
+                && "obf".equals(headerTokens[3]) && "named".equals(headerTokens[4])) {
+            threeColumn = false;
+        } else if (headerTokens.length == 6
+                && "obf".equals(headerTokens[3]) && "intermediary".equals(headerTokens[4]) && "named".equals(headerTokens[5])) {
+            threeColumn = true;
+        } else {
+            throw new MappingLookupException("Tiny v2 命名空间布局不支持（仅支持 `obf named` 与 `obf intermediary named`）: " + resourcePath);
+        }
+
         List<MappingEntry> entries = new ArrayList<>();
         int currentClassIndex = -1;
         int currentMemberIndex = -1;
@@ -230,10 +278,21 @@ public final class TinyV2MappingRepository implements MappingRepository {
 
             if (indent == 0) {
                 String[] tokens = content.split("\\s+");
-                if (tokens.length != 3 || !"c".equals(tokens[0])) {
+                if (!"c".equals(tokens[0])) {
                     throw new MappingLookupException("Tiny v2 类映射格式不正确: " + line);
                 }
-                entries.add(MappingEntry.classEntry(tokens[1], tokens[2]));
+                if (threeColumn) {
+                    // c <obf> <intermediary> [<named>]；named 省略表示未命名条目
+                    if (tokens.length != 3 && tokens.length != 4) {
+                        throw new MappingLookupException("Tiny v2 类映射格式不正确: " + line);
+                    }
+                    entries.add(MappingEntry.classEntry(tokens[1], tokens[2], tokens.length == 4 ? tokens[3] : null));
+                } else {
+                    if (tokens.length != 3) {
+                        throw new MappingLookupException("Tiny v2 类映射格式不正确: " + line);
+                    }
+                    entries.add(MappingEntry.classEntry(tokens[1], tokens[2]));
+                }
                 currentClassIndex = entries.size() - 1;
                 currentMemberIndex = -1;
                 continue;
@@ -261,34 +320,43 @@ public final class TinyV2MappingRepository implements MappingRepository {
             }
 
             String[] tokens = content.split("\\s+");
-            if (tokens.length != 4) {
-                throw new MappingLookupException("Tiny v2 成员映射格式不正确: " + line);
+            boolean isField = "f".equals(tokens[0]);
+            boolean isMethod = "m".equals(tokens[0]);
+            if (!isField && !isMethod) {
+                throw new MappingLookupException("Tiny v2 不支持的映射类型: " + tokens[0]);
             }
 
             MappingEntry currentClass = entries.get(currentClassIndex);
-            if ("f".equals(tokens[0])) {
-                entries.add(MappingEntry.fieldEntry(
-                        currentClass.obfuscatedName(),
-                        currentClass.namedName(),
-                        tokens[1],
-                        tokens[2],
-                        tokens[3]));
-                currentMemberIndex = entries.size() - 1;
-                continue;
+            // 成员条目的 owner 目标侧名：named 优先，未命名类落 intermediary 占位名，
+            // 与 remap 目标规则（named ?: intermediary）一致，保证 named 索引可按目标侧 owner 命中。
+            String ownerTargetName = currentClass.namedOrIntermediary();
+            if (threeColumn) {
+                // f|m <obf> <intermediary> [<named>] <desc>；named 省略表示未命名条目
+                if (tokens.length != 4 && tokens.length != 5) {
+                    throw new MappingLookupException("Tiny v2 成员映射格式不正确: " + line);
+                }
+                String namedName = tokens.length == 5 ? tokens[3] : null;
+                String descriptor = tokens[tokens.length - 1];
+                entries.add(isField
+                        ? MappingEntry.fieldEntry(
+                                currentClass.obfuscatedName(), ownerTargetName,
+                                tokens[1], tokens[2], namedName, descriptor)
+                        : MappingEntry.methodEntry(
+                                currentClass.obfuscatedName(), ownerTargetName,
+                                tokens[1], tokens[2], namedName, descriptor));
+            } else {
+                if (tokens.length != 4) {
+                    throw new MappingLookupException("Tiny v2 成员映射格式不正确: " + line);
+                }
+                entries.add(isField
+                        ? MappingEntry.fieldEntry(
+                                currentClass.obfuscatedName(), ownerTargetName,
+                                tokens[1], tokens[2], tokens[3])
+                        : MappingEntry.methodEntry(
+                                currentClass.obfuscatedName(), ownerTargetName,
+                                tokens[1], tokens[2], tokens[3]));
             }
-
-            if ("m".equals(tokens[0])) {
-                entries.add(MappingEntry.methodEntry(
-                        currentClass.obfuscatedName(),
-                        currentClass.namedName(),
-                        tokens[1],
-                        tokens[2],
-                        tokens[3]));
-                currentMemberIndex = entries.size() - 1;
-                continue;
-            }
-
-            throw new MappingLookupException("Tiny v2 不支持的映射类型: " + tokens[0]);
+            currentMemberIndex = entries.size() - 1;
         }
 
         return entries;
@@ -337,7 +405,8 @@ public final class TinyV2MappingRepository implements MappingRepository {
             if (classEntry == null) {
                 builder.append(INTERNAL_NAME_START).append(internalName).append(INTERNAL_NAME_END);
             } else if (toNamed) {
-                builder.append(INTERNAL_NAME_START).append(classEntry.namedName()).append(INTERNAL_NAME_END);
+                // unnamed 类落到 intermediary 占位名，与 remap 目标规则（named ?: intermediary）一致
+                builder.append(INTERNAL_NAME_START).append(classEntry.namedOrIntermediary()).append(INTERNAL_NAME_END);
             } else {
                 builder.append(INTERNAL_NAME_START).append(classEntry.obfuscatedName()).append(INTERNAL_NAME_END);
             }
@@ -392,6 +461,14 @@ public final class TinyV2MappingRepository implements MappingRepository {
      * {@inheritDoc}
      */
     @Override
+    public Optional<MappingEntry> findClassByIntermediaryName(String intermediaryName) {
+        return Optional.ofNullable(classByIntermediaryName.get(intermediaryName));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Optional<MappingEntry> findFieldByObfuscatedName(String ownerObfuscatedName, String fieldName) {
         return Optional.ofNullable(fieldByObfuscatedKey.get(fieldKey(ownerObfuscatedName, fieldName)));
     }
@@ -408,6 +485,14 @@ public final class TinyV2MappingRepository implements MappingRepository {
      * {@inheritDoc}
      */
     @Override
+    public Optional<MappingEntry> findFieldByIntermediaryName(String ownerIntermediaryName, String fieldName) {
+        return Optional.ofNullable(fieldByIntermediaryKey.get(fieldKey(ownerIntermediaryName, fieldName)));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Optional<MappingEntry> findMethodByObfuscatedName(String ownerObfuscatedName, String methodName, String descriptor) {
         return Optional.ofNullable(methodByObfuscatedKey.get(methodKey(ownerObfuscatedName, methodName, descriptor)));
     }
@@ -418,6 +503,14 @@ public final class TinyV2MappingRepository implements MappingRepository {
     @Override
     public Optional<MappingEntry> findMethodByNamedName(String ownerNamedName, String methodName, String descriptor) {
         return Optional.ofNullable(methodByNamedKey.get(methodKey(ownerNamedName, methodName, descriptor)));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Optional<MappingEntry> findMethodByIntermediaryName(String ownerIntermediaryName, String methodName, String descriptor) {
+        return Optional.ofNullable(methodByIntermediaryKey.get(methodKey(ownerIntermediaryName, methodName, descriptor)));
     }
 
     /**
@@ -440,6 +533,17 @@ public final class TinyV2MappingRepository implements MappingRepository {
     public MappingEntry requireClassByNamedName(String namedName) {
         return findClassByNamedName(namedName)
                 .orElseThrow(() -> new MappingLookupException("未找到类映射: " + namedName));
+    }
+
+    /**
+     * 通过中间类名直接获取类映射。
+     *
+     * @param intermediaryName 中间类名
+     * @return 类映射
+     */
+    public MappingEntry requireClassByIntermediaryName(String intermediaryName) {
+        return findClassByIntermediaryName(intermediaryName)
+                .orElseThrow(() -> new MappingLookupException("未找到类映射: " + intermediaryName));
     }
 
     /**

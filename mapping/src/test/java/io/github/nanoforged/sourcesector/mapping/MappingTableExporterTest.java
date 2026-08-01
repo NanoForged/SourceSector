@@ -36,6 +36,11 @@ class MappingTableExporterTest {
         }
 
         @Override
+        public java.util.Optional<MappingEntry> findClassByIntermediaryName(String intermediaryName) {
+            return java.util.Optional.empty();
+        }
+
+        @Override
         public java.util.Optional<MappingEntry> findFieldByObfuscatedName(String ownerObfuscatedName, String fieldName) {
             return java.util.Optional.empty();
         }
@@ -46,12 +51,22 @@ class MappingTableExporterTest {
         }
 
         @Override
+        public java.util.Optional<MappingEntry> findFieldByIntermediaryName(String ownerIntermediaryName, String fieldName) {
+            return java.util.Optional.empty();
+        }
+
+        @Override
         public java.util.Optional<MappingEntry> findMethodByObfuscatedName(String ownerObfuscatedName, String methodName, String descriptor) {
             return java.util.Optional.empty();
         }
 
         @Override
         public java.util.Optional<MappingEntry> findMethodByNamedName(String ownerNamedName, String methodName, String descriptor) {
+            return java.util.Optional.empty();
+        }
+
+        @Override
+        public java.util.Optional<MappingEntry> findMethodByIntermediaryName(String ownerIntermediaryName, String methodName, String descriptor) {
             return java.util.Optional.empty();
         }
     };
@@ -117,5 +132,36 @@ class MappingTableExporterTest {
             assertEquals(expected.descriptor(), actual.descriptor());
             assertEquals(expected.comment(), actual.comment());
         }
+    }
+
+    @Test
+    void exportTinyRoundTripsThreeColumnEntries() {
+        java.util.List<MappingEntry> entries = java.util.List.of(
+                MappingEntry.classEntry("com/example/oo", "com/example/C_aaaa1111", "com/example/Named")
+                        .withComment("人工注释"),
+                MappingEntry.fieldEntry("com/example/oo", "com/example/Named", "a", "f_1111aaaa", "counter", "I"),
+                // 未命名类：named 为空，导出时省略 named 尾列
+                MappingEntry.classEntry("com/example/o0", "com/example/C_bbbb2222", null),
+                MappingEntry.methodEntry("com/example/o0", "com/example/C_bbbb2222", "b", "m_2222bbbb", null, "(Lcom/example/oo;)V"),
+                // identity 条目：无 intermediary 锚点，导出时以 obf 名充当 identity intermediary
+                MappingEntry.classEntry("com/example/Keep", "com/example/Keep"));
+
+        String tiny = new MappingTableExporter(TinyV2MappingRepository.of(entries)).exportTiny();
+        assertTrue(tiny.startsWith("tiny\t2\t0\tobf\tintermediary\tnamed\n"),
+                "含 intermediary 的条目应导出三列头: " + tiny.lines().findFirst().orElse(""));
+        assertTrue(tiny.contains("c\tcom/example/o0\tcom/example/C_bbbb2222\n"),
+                "未命名类行应省略 named 尾列");
+        assertTrue(tiny.contains("\tm\tb\tm_2222bbbb\t(Lcom/example/oo;)V\n"),
+                "未命名成员行应省略 named 列、描述符收尾");
+        assertTrue(tiny.contains("c\tcom/example/Keep\tcom/example/Keep\tcom/example/Keep\n"),
+                "identity 条目应以 obf 名充当 intermediary 列");
+
+        TinyV2MappingRepository reparsed = TinyV2MappingRepository.loadFromResource(
+                new java.io.ByteArrayInputStream(tiny.getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                "memory:three-column-roundtrip.tiny");
+        assertEquals(entries.size(), reparsed.entries().size());
+        // 导出 → 解析 → 再导出必须字节一致（幂等）。
+        String reexported = new MappingTableExporter(reparsed).exportTiny();
+        assertEquals(tiny, reexported, "三列表导出必须幂等");
     }
 }

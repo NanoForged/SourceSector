@@ -34,6 +34,14 @@ public interface MappingRepository {
     Optional<MappingEntry> findClassByNamedName(String namedName);
 
     /**
+     * 通过中间类名查找类映射。
+     *
+     * @param intermediaryName 中间类名（结构指纹占位名）
+     * @return 匹配的映射项
+     */
+    Optional<MappingEntry> findClassByIntermediaryName(String intermediaryName);
+
+    /**
      * 通过混淆侧拥有者和字段名查找字段映射。
      *
      * @param ownerObfuscatedName 混淆类名
@@ -50,6 +58,15 @@ public interface MappingRepository {
      * @return 匹配的映射项
      */
     Optional<MappingEntry> findFieldByNamedName(String ownerNamedName, String fieldName);
+
+    /**
+     * 通过中间侧拥有者和字段名查找字段映射。
+     *
+     * @param ownerIntermediaryName 中间类名
+     * @param fieldName             中间字段名
+     * @return 匹配的映射项
+     */
+    Optional<MappingEntry> findFieldByIntermediaryName(String ownerIntermediaryName, String fieldName);
 
     /**
      * 通过混淆侧拥有者、方法名和描述符查找方法映射。
@@ -70,4 +87,14 @@ public interface MappingRepository {
      * @return 匹配的映射项
      */
     Optional<MappingEntry> findMethodByNamedName(String ownerNamedName, String methodName, String descriptor);
+
+    /**
+     * 通过中间侧拥有者、方法名和描述符查找方法映射。
+     *
+     * @param ownerIntermediaryName 中间类名
+     * @param methodName            中间方法名
+     * @param descriptor            方法描述符（canonical：obf 侧）
+     * @return 匹配的映射项
+     */
+    Optional<MappingEntry> findMethodByIntermediaryName(String ownerIntermediaryName, String methodName, String descriptor);
 }

@@ -11,28 +11,30 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * 占位名（中间名）生成器。
+ * 中间名（intermediary）生成器。
  * <p>
- * 为混淆 jar 中的全部类与成员生成确定性的占位 named 名：
+ * 为混淆 jar 中的全部非 identity 类生成确定性的中间名锚点：
  * 类保留原包前缀、类名取 {@code C_<指纹8>}；成员取 {@code f_<指纹8>} / {@code m_<指纹8>}，
  * 成员指纹输入含描述符，同名重载天然区分。同一作用域内指纹冲突时按内部名排序，
  * 首个不加后缀，其余追加 {@code _2}/{@code _3} 序号。
  * <p>
- * 成员名提升：Starsector 的混淆器只改写了部分成员名，未改写的成员在混淆 jar 中
- * 保留原始开发者命名（如 {@code ship}、{@code render}、{@code MAX_RANGE}）。
- * 这类可读混淆名直接提升为 named 名（重载方法同名提升，保持 Java 重载语义），
- * 不再落哈希占位；o0 字典垃圾名、Java 关键字/字面量/常见 JDK 类型名、
- * 编译器合成名（含 {@code $}）仍落哈希占位，交由后续语义命名处理。
+ * 产出条目为三列全量表形态：类条目 {@code (obf, intermediary, named=null)}，
+ * 成员条目 named 列只承载可读的 named 层命名——未混淆器改写的原始名提升
+ * （如 {@code ship}、{@code render}、{@code MAX_RANGE}，重载方法同名提升保持 Java 重载语义）
+ * 与机械预命名（{@code serialVersionUID} / 字符串常量派生名 / {@code logger}），
+ * 其余成员 named 列为 {@code null}（未命名），remap 时落到 intermediary 占位名。
+ * o0 字典垃圾名、Java 关键字/字面量/常见 JDK 类型名、编译器合成名（含 {@code $}）
+ * 不提升，交由后续语义命名处理。
  * <p>
- * 机械预命名：零歧义字段不落哈希占位，直接按规则派生 named 名——唯一
- * {@code static final long} 且实现 {@code Serializable} 的类 → {@code serialVersionUID}；
- * 带 ConstantValue 的 {@code static final String} 常量字段按值派生 camelCase 名；
- * {@code static} log4j Logger 字段 → {@code logger}。派生名与提升名/已分配名冲突时
- * 按声明顺序追加 {@code _2}/{@code _3}。
+ * 提升/机械成员的 intermediary 单独按指纹计算（不参与哈希冲突组的 {@code _2}/{@code _3} 排序，
+ * 与既有双列全量表的占位名序号保持字节级一致），与同组哈希成员撞名时按声明顺序追加序号。
  * <p>
- * 人工表已覆盖的类与成员一律跳过（人工条目优先，由
- * {@link FullMappingMerger} 合并回最终表）。构造方法与静态初始化块不生成映射。
- * 同类同名字段组（混淆器产生的 name 相同 desc 不同字段）无法按名消歧，整组跳过并保持混淆名。
+ * 人工表已覆盖的成员一律跳过（人工条目优先，由 {@link FullMappingMerger} 合并回最终表）；
+ * 人工表已覆盖的类仍发放 intermediary 类条目——合并器只取其中的 intermediary 名转移到
+ * 胜出的人工/scope 条目上（人工层输入无双列以外的锚点，其未命名成员的 intermediary
+ * 索引需要 owner 中间名才能解析）。构造方法与静态初始化块不生成映射。
+ * identity 类（保持原名类）整体跳过。同类同名字段组（混淆器产生的 name 相同 desc 不同字段）
+ * 无法按名消歧，整组跳过并保持混淆名。
  */
 public final class IntermediaryNameGenerator {
     /**
@@ -62,13 +64,14 @@ public final class IntermediaryNameGenerator {
             java.util.regex.Pattern.compile("[oO0]{3,}");
 
     /**
-     * 生成占位映射条目。
+     * 生成中间名映射条目（三列全量表形态）。
      *
      * @param classes          按内部名排序的类结构列表
-     * @param humanRepository  人工映射表（已覆盖的类/成员跳过）
+     * @param humanRepository  人工映射表（已覆盖的成员跳过；已覆盖的类仍发放
+     *                         intermediary 类条目，供合并器转移锚点名）
      * @param identityClasses  保持原名的类集合（app 编译期直接引用的类；
      *                         类与全部成员都不生成映射，remap 时自然保持原名）
-     * @return 占位映射条目，类按内部名排序、成员按声明顺序跟随所属类
+     * @return 中间名映射条目，类按内部名排序、成员按声明顺序跟随所属类
      */
     public List<MappingEntry> generate(List<ClassStructure> classes,
                                        TinyV2MappingRepository humanRepository,
@@ -77,7 +80,7 @@ public final class IntermediaryNameGenerator {
         Objects.requireNonNull(humanRepository, "humanRepository");
         Objects.requireNonNull(identityClasses, "identityClasses");
 
-        Map<String, String> classNamedNames = assignClassNames(classes, humanRepository, identityClasses);
+        Map<String, String> classIntermediaryNames = assignClassNames(classes, identityClasses);
 
         List<MappingEntry> entries = new ArrayList<>();
         for (ClassStructure classStructure : classes) {
@@ -86,28 +89,24 @@ public final class IntermediaryNameGenerator {
                 continue;
             }
             String obfuscatedName = classStructure.name();
-            String namedName = classNamedNames.get(obfuscatedName);
-            if (namedName == null) {
-                // 人工表已覆盖的类：类条目由合并器提供，这里只补未覆盖成员的占位名。
-                namedName = humanRepository.requireClassByObfuscatedName(obfuscatedName).namedName();
-            } else {
-                entries.add(MappingEntry.classEntry(obfuscatedName, namedName));
-            }
-            entries.addAll(generateMembers(classStructure, namedName, humanRepository));
+            String intermediaryName = classIntermediaryNames.get(obfuscatedName);
+            // 人工覆盖类也发放 intermediary 类条目：合并器只把 intermediary 名转移到胜出条目上。
+            entries.add(MappingEntry.classEntry(obfuscatedName, intermediaryName, null));
+            // 成员条目的 owner 目标侧名：人工覆盖类用人工 named 名，未覆盖类用 intermediary 名。
+            String ownerTargetName = humanRepository.findClassByObfuscatedName(obfuscatedName)
+                    .map(MappingEntry::namedName)
+                    .orElse(intermediaryName);
+            entries.addAll(generateMembers(classStructure, ownerTargetName, humanRepository));
         }
         return entries;
     }
 
     private static Map<String, String> assignClassNames(List<ClassStructure> classes,
-                                                        TinyV2MappingRepository humanRepository,
                                                         java.util.Set<String> identityClasses) {
         Map<String, List<ClassStructure>> byPackageAndHash = new LinkedHashMap<>();
         Map<String, String> hashes = new LinkedHashMap<>();
         for (ClassStructure classStructure : classes) {
             if (identityClasses.contains(classStructure.name())) {
-                continue;
-            }
-            if (humanRepository.findClassByObfuscatedName(classStructure.name()).isPresent()) {
                 continue;
             }
             String hash = StructuralFingerprint.ofClass(classStructure);
@@ -116,22 +115,22 @@ public final class IntermediaryNameGenerator {
                     .add(classStructure);
         }
 
-        Map<String, String> namedNames = new LinkedHashMap<>();
+        Map<String, String> intermediaryNames = new LinkedHashMap<>();
         for (List<ClassStructure> conflictGroup : byPackageAndHash.values()) {
             conflictGroup.sort(Comparator.comparing(ClassStructure::name));
             int ordinal = 1;
             for (ClassStructure classStructure : conflictGroup) {
                 String simpleName = "C_" + hashes.get(classStructure.name()) + (ordinal == 1 ? "" : "_" + ordinal);
                 String packageName = packageOf(classStructure.name());
-                namedNames.put(classStructure.name(), packageName.isEmpty() ? simpleName : packageName + '/' + simpleName);
+                intermediaryNames.put(classStructure.name(), packageName.isEmpty() ? simpleName : packageName + '/' + simpleName);
                 ordinal++;
             }
         }
-        return namedNames;
+        return intermediaryNames;
     }
 
     private static List<MappingEntry> generateMembers(ClassStructure classStructure,
-                                                      String ownerNamedName,
+                                                      String ownerTargetName,
                                                       TinyV2MappingRepository humanRepository) {
         String ownerObfuscatedName = classStructure.name();
         List<MappingEntry> members = new ArrayList<>();
@@ -167,24 +166,34 @@ public final class IntermediaryNameGenerator {
                 }
             }
         }
-        Map<String, String> fieldNamedNames = assignMemberNames(fieldsByHash, "f_");
-        fieldNamedNames.putAll(promotedFieldNames);
+
+        // 哈希冲突组的 _2/_3 序号只覆盖非提升/非机械成员（与既有双列全量表的占位序号一致）；
+        // 提升/机械成员的 intermediary 单独按指纹计算，撞名时按声明顺序追加序号。
+        Map<String, String> fieldIntermediaryNames = assignMemberNames(fieldsByHash, "f_");
+        java.util.Set<String> usedFieldIntermediaryNames = new java.util.HashSet<>(fieldIntermediaryNames.values());
+        Map<String, String> fieldNamedNames = new LinkedHashMap<>(promotedFieldNames);
         // 机械预命名按声明顺序去重：与提升名 / 同已分配的机械名冲突时追加 _2/_3。
         java.util.Set<String> usedFieldNames = new java.util.HashSet<>(promotedFieldNames.values());
         for (ClassStructure.Member field : classStructure.fields()) {
             String key = field.name() + ':' + field.desc();
-            String baseName = mechanicalFieldNames.get(key);
-            if (baseName == null) {
+            if (!generatedFields.containsKey(key)
+                    || (!promotedFieldNames.containsKey(key) && !mechanicalFieldNames.containsKey(key))) {
+                // 非提升/非机械成员的 intermediary 已由冲突组分配。
                 continue;
             }
-            String uniqueName = baseName;
-            int ordinal = 2;
-            while (usedFieldNames.contains(uniqueName)) {
-                uniqueName = baseName + "_" + ordinal;
-                ordinal++;
+            fieldIntermediaryNames.put(key, deduplicateIntermediary(
+                    "f_" + StructuralFingerprint.ofField(field), usedFieldIntermediaryNames));
+            String baseName = mechanicalFieldNames.get(key);
+            if (baseName != null) {
+                String uniqueName = baseName;
+                int ordinal = 2;
+                while (usedFieldNames.contains(uniqueName)) {
+                    uniqueName = baseName + "_" + ordinal;
+                    ordinal++;
+                }
+                usedFieldNames.add(uniqueName);
+                fieldNamedNames.put(key, uniqueName);
             }
-            usedFieldNames.add(uniqueName);
-            fieldNamedNames.put(key, uniqueName);
         }
         for (ClassStructure.Member field : classStructure.fields()) {
             String key = field.name() + ':' + field.desc();
@@ -192,7 +201,8 @@ public final class IntermediaryNameGenerator {
                 continue;
             }
             members.add(MappingEntry.fieldEntry(
-                    ownerObfuscatedName, ownerNamedName, field.name(), fieldNamedNames.get(key), field.desc()));
+                    ownerObfuscatedName, ownerTargetName, field.name(),
+                    fieldIntermediaryNames.get(key), fieldNamedNames.get(key), field.desc()));
         }
 
         Map<String, List<ClassStructure.Member>> methodsByHash = new LinkedHashMap<>();
@@ -214,18 +224,42 @@ public final class IntermediaryNameGenerator {
                 methodsByHash.computeIfAbsent(hash, key -> new ArrayList<>()).add(method);
             }
         }
-        Map<String, String> methodNamedNames = assignMemberNames(methodsByHash, "m_");
-        methodNamedNames.putAll(promotedMethodNames);
+        Map<String, String> methodIntermediaryNames = assignMemberNames(methodsByHash, "m_");
+        java.util.Set<String> usedMethodIntermediaryNames = new java.util.HashSet<>(methodIntermediaryNames.values());
+        for (ClassStructure.Member method : classStructure.methods()) {
+            String key = method.name() + ':' + method.desc();
+            if (!generatedMethods.containsKey(key) || !promotedMethodNames.containsKey(key)) {
+                continue;
+            }
+            methodIntermediaryNames.put(key, deduplicateIntermediary(
+                    "m_" + StructuralFingerprint.ofMethod(method), usedMethodIntermediaryNames));
+        }
         for (ClassStructure.Member method : classStructure.methods()) {
             String key = method.name() + ':' + method.desc();
             if (!generatedMethods.containsKey(key)) {
                 continue;
             }
             members.add(MappingEntry.methodEntry(
-                    ownerObfuscatedName, ownerNamedName, method.name(), methodNamedNames.get(key), method.desc()));
+                    ownerObfuscatedName, ownerTargetName, method.name(),
+                    methodIntermediaryNames.get(key), promotedMethodNames.get(key), method.desc()));
         }
 
         return members;
+    }
+
+    /**
+     * 为提升/机械成员的 intermediary 名去重：与哈希冲突组已分配名或先声明成员撞名时
+     * 追加 {@code _2}/{@code _3} 序号（声明顺序确定，输出可复现）。
+     */
+    private static String deduplicateIntermediary(String baseName, java.util.Set<String> usedNames) {
+        String uniqueName = baseName;
+        int ordinal = 2;
+        while (usedNames.contains(uniqueName)) {
+            uniqueName = baseName + "_" + ordinal;
+            ordinal++;
+        }
+        usedNames.add(uniqueName);
+        return uniqueName;
     }
 
     /**

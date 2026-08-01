@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -58,10 +59,13 @@ class ScopeFragmentMergingTest {
         // scope 覆盖的字段使用语义名。
         assertEquals("alphaField",
                 mergedRepository.requireFieldByObfuscatedName("com/example/A", "a").namedName());
-        // 未覆盖的字段与方法仍用占位名。
-        assertTrue(mergedRepository.requireFieldByObfuscatedName("com/example/A", "b").namedName().startsWith("f_"));
+        // 未覆盖的字段与方法保持未命名（named 空，intermediary 落哈希锚点名）。
+        assertNull(mergedRepository.requireFieldByObfuscatedName("com/example/A", "b").namedName());
+        assertTrue(mergedRepository.requireFieldByObfuscatedName("com/example/A", "b")
+                .intermediaryName().startsWith("f_"));
+        assertNull(mergedRepository.requireMethodByObfuscatedName("com/example/A", "a", "()V").namedName());
         assertTrue(mergedRepository.requireMethodByObfuscatedName("com/example/A", "a", "()V")
-                .namedName().startsWith("m_"));
+                .intermediaryName().startsWith("m_"));
     }
 
     @Test

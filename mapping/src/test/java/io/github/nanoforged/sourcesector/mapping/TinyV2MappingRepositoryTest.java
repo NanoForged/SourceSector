@@ -122,6 +122,60 @@ class TinyV2MappingRepositoryTest {
     }
 
     @Test
+    void parsesThreeColumnTableWithIntermediaryNamespace() {
+        String tiny = String.join("\n",
+            "tiny 2 0 obf intermediary named",
+            "c com/example/oo com/example/C_aaaa1111 com/example/Named",
+            "\tc 人工注释",
+            "\tf a f_1111aaaa counter I",
+            "c com/example/o0 com/example/C_bbbb2222",
+            "\tf c f_5555eeee I",
+            "\tm b m_2222bbbb (Lcom/example/oo;)V") + "\n";
+
+        TinyV2MappingRepository repository = TinyV2MappingRepository.loadFromResource(
+            new ByteArrayInputStream(tiny.getBytes(StandardCharsets.UTF_8)),
+            "memory:test-three-column.tiny");
+
+        // 类条目：obf / intermediary 双索引可查，named 为空的类不进 named 索引。
+        assertEquals("com/example/Named",
+                repository.requireClassByObfuscatedName("com/example/oo").namedOrIntermediary());
+        assertEquals("com/example/oo",
+                repository.requireClassByIntermediaryName("com/example/C_aaaa1111").obfuscatedName());
+        MappingEntry unnamedClass = repository.requireClassByObfuscatedName("com/example/o0");
+        assertEquals(null, unnamedClass.namedName());
+        assertEquals("com/example/C_bbbb2222", unnamedClass.namedOrIntermediary());
+        assertTrue(repository.findClassByNamedName("com/example/C_bbbb2222").isEmpty());
+        assertTrue(repository.findClassByIntermediaryName("com/example/C_bbbb2222").isPresent());
+
+        // 命名成员：named 索引可查（owner 为 named 类名）。
+        assertTrue(repository.findFieldByNamedName("com/example/Named", "counter").isPresent());
+        assertTrue(repository.findFieldByIntermediaryName("com/example/C_aaaa1111", "f_1111aaaa").isPresent());
+
+        // 未命名成员：named 列为空，ownerNamed 落 owner 的 intermediary 名；
+        // intermediary 索引以 obf 侧描述符为 key（desc canonical = obf）。
+        MappingEntry method = repository.requireMethodByObfuscatedName("com/example/o0", "b", "(Lcom/example/oo;)V");
+        assertEquals(null, method.namedName());
+        assertEquals("m_2222bbbb", method.namedOrIntermediary());
+        assertEquals("com/example/C_bbbb2222", method.ownerNamedName());
+        assertTrue(repository.findMethodByIntermediaryName(
+                "com/example/C_bbbb2222", "m_2222bbbb", "(Lcom/example/oo;)V").isPresent());
+        assertTrue(repository.findFieldByIntermediaryName("com/example/C_bbbb2222", "f_5555eeee").isPresent());
+    }
+
+    @Test
+    void rejectsUnsupportedNamespaceLayout() {
+        String tiny = String.join("\n",
+            "tiny 2 0 obf hashed named",
+            "c com/example/A com/example/B com/example/C") + "\n";
+
+        MappingLookupException exception = assertThrows(MappingLookupException.class,
+            () -> TinyV2MappingRepository.loadFromResource(
+                new ByteArrayInputStream(tiny.getBytes(StandardCharsets.UTF_8)),
+                "memory:test-bad-layout.tiny"));
+        assertTrue(exception.getMessage().contains("命名空间布局不支持"));
+    }
+
+    @Test
     void rejectsUnknownLinesEvenWithCommentSupport() {
         String tiny = String.join("\n",
             "tiny 2 0 obf named",

@@ -74,25 +74,32 @@ class FullMappingGenerationTest {
                 .generate(classes, humanRepository, java.util.Set.of());
         List<MappingEntry> merged = new FullMappingMerger().merge(humanRepository.entries(), generated);
 
-        // 类条目：人工优先且注释保留。
+        // 类条目：人工优先且注释保留，intermediary 锚点名由生成层转移过来。
         MappingEntry classEntry = merged.stream()
                 .filter(entry -> entry.isClass() && entry.obfuscatedName().equals("com/example/A"))
                 .findFirst().orElseThrow();
         assertEquals("com/example/Alpha", classEntry.namedName());
         assertEquals("人工注释", classEntry.comment());
+        assertTrue(classEntry.intermediaryName() != null && classEntry.intermediaryName().contains("C_"),
+                "人工类条目应携带生成层转移的 intermediary 锚点名: " + classEntry.intermediaryName());
 
         TinyV2MappingRepository mergedRepository = TinyV2MappingRepository.of(merged);
         // 人工字段优先。
         assertEquals("alphaField",
                 mergedRepository.requireFieldByObfuscatedName("com/example/A", "a").namedName());
-        // 未覆盖字段生成占位名，描述符换算为 named 存储。
+        // 未覆盖字段保持未命名（named 为空），intermediary 落哈希锚点名，描述符以 obf 侧为 canonical。
         MappingEntry placeholderField = mergedRepository.requireFieldByObfuscatedName("com/example/A", "b");
-        assertTrue(placeholderField.namedName().startsWith("f_"), "占位字段名应以 f_ 开头: " + placeholderField.namedName());
-        assertEquals("Lcom/example/Alpha;", placeholderField.descriptor());
+        assertNull(placeholderField.namedName(), "未命名成员 named 列应为空");
+        assertTrue(placeholderField.intermediaryName().startsWith("f_"),
+                "占位字段 intermediary 名应以 f_ 开头: " + placeholderField.intermediaryName());
+        assertTrue(placeholderField.namedOrIntermediary().startsWith("f_"),
+                "remap 目标名应落 intermediary: " + placeholderField.namedOrIntermediary());
+        assertEquals("Lcom/example/A;", placeholderField.descriptor());
         assertNull(placeholderField.comment());
-        // 未覆盖方法生成占位名，构造方法与静态初始化块不生成映射。
-        assertTrue(mergedRepository.requireMethodByObfuscatedName("com/example/A", "a", "()V")
-                .namedName().startsWith("m_"));
+        // 未覆盖方法同理，构造方法与静态初始化块不生成映射。
+        MappingEntry placeholderMethod = mergedRepository.requireMethodByObfuscatedName("com/example/A", "a", "()V");
+        assertNull(placeholderMethod.namedName());
+        assertTrue(placeholderMethod.intermediaryName().startsWith("m_"));
         assertTrue(mergedRepository.findMethodByObfuscatedName("com/example/A", "<init>", "()V").isEmpty());
         assertTrue(mergedRepository.findMethodByObfuscatedName("com/example/A", "<clinit>", "()V").isEmpty());
     }
@@ -128,13 +135,22 @@ class FullMappingGenerationTest {
         // 重载方法同名提升，保持 Java 重载语义。
         assertEquals("render", mergedRepository.requireMethodByObfuscatedName("com/example/A", "render", "()V").namedName());
         assertEquals("render", mergedRepository.requireMethodByObfuscatedName("com/example/A", "render", "(I)V").namedName());
-        // 混淆器垃圾名（o0 字典 / 关键字 / 字面量 / 类型名 / 合成名）仍落哈希占位。
-        assertTrue(mergedRepository.requireFieldByObfuscatedName("com/example/A", "oo0000").namedName().startsWith("f_"));
-        assertTrue(mergedRepository.requireFieldByObfuscatedName("com/example/A", "String").namedName().startsWith("f_"));
-        assertTrue(mergedRepository.requireFieldByObfuscatedName("com/example/A", "for").namedName().startsWith("f_"));
-        assertTrue(mergedRepository.requireFieldByObfuscatedName("com/example/A", "null").namedName().startsWith("f_"));
-        assertTrue(mergedRepository.requireFieldByObfuscatedName("com/example/A", "this$0").namedName().startsWith("f_"));
-        assertTrue(mergedRepository.requireMethodByObfuscatedName("com/example/A", "Object", "()V").namedName().startsWith("m_"));
+        // 混淆器垃圾名（o0 字典 / 关键字 / 字面量 / 类型名 / 合成名）不提升：
+        // named 列为空，intermediary 落哈希锚点名（remap 目标即 intermediary）。
+        assertUnnamedWithIntermediary(mergedRepository.requireFieldByObfuscatedName("com/example/A", "oo0000"), "f_");
+        assertUnnamedWithIntermediary(mergedRepository.requireFieldByObfuscatedName("com/example/A", "String"), "f_");
+        assertUnnamedWithIntermediary(mergedRepository.requireFieldByObfuscatedName("com/example/A", "for"), "f_");
+        assertUnnamedWithIntermediary(mergedRepository.requireFieldByObfuscatedName("com/example/A", "null"), "f_");
+        assertUnnamedWithIntermediary(mergedRepository.requireFieldByObfuscatedName("com/example/A", "this$0"), "f_");
+        assertUnnamedWithIntermediary(mergedRepository.requireMethodByObfuscatedName("com/example/A", "Object", "()V"), "m_");
+    }
+
+    private static void assertUnnamedWithIntermediary(MappingEntry entry, String intermediaryPrefix) {
+        assertNull(entry.namedName(), "不可提升的成员 named 列应为空: " + entry.obfuscatedName());
+        assertTrue(entry.intermediaryName().startsWith(intermediaryPrefix),
+                "intermediary 名应以 " + intermediaryPrefix + " 开头: " + entry.intermediaryName());
+        assertEquals(entry.intermediaryName(), entry.namedOrIntermediary(),
+                "未命名成员的 remap 目标名应落 intermediary");
     }
 
     @Test
@@ -167,16 +183,16 @@ class FullMappingGenerationTest {
                 mergedRepository.requireFieldByObfuscatedName("com/example/Settings", "o00001").namedName());
         assertEquals("smallFonts8Fnt_2",
                 mergedRepository.requireFieldByObfuscatedName("com/example/Settings", "o00002").namedName());
-        // 关键字 / 空白常量值不可派生，落回哈希占位。
-        assertTrue(mergedRepository.requireFieldByObfuscatedName("com/example/Settings", "o00003").namedName().startsWith("f_"));
-        assertTrue(mergedRepository.requireFieldByObfuscatedName("com/example/Settings", "o00004").namedName().startsWith("f_"));
+        // 关键字 / 空白常量值不可派生，保持未命名（named 空，intermediary 落哈希锚点名）。
+        assertUnnamedWithIntermediary(mergedRepository.requireFieldByObfuscatedName("com/example/Settings", "o00003"), "f_");
+        assertUnnamedWithIntermediary(mergedRepository.requireFieldByObfuscatedName("com/example/Settings", "o00004"), "f_");
         // static Logger 字段 → logger，第二个追加 _2。
         assertEquals("logger",
                 mergedRepository.requireFieldByObfuscatedName("com/example/Settings", "o00005").namedName());
         assertEquals("logger_2",
                 mergedRepository.requireFieldByObfuscatedName("com/example/Settings", "o00006").namedName());
-        // 普通字段不受影响，仍为哈希占位。
-        assertTrue(mergedRepository.requireFieldByObfuscatedName("com/example/Settings", "o00007").namedName().startsWith("f_"));
+        // 普通字段不受影响，仍为未命名哈希锚点。
+        assertUnnamedWithIntermediary(mergedRepository.requireFieldByObfuscatedName("com/example/Settings", "o00007"), "f_");
     }
 
     @Test
