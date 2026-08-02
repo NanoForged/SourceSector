@@ -261,7 +261,7 @@ c	com/fs/starfarer/coreui/oOO0	com/fs/starfarer/coreui/AptitudePanelCopy
 	m	setShouldFlash	setShouldFlash	(Z)V
 	m	shouldFlashOnShowing	shouldFlashOnShowing	()Z
 
-	f	ooÒ000	nameLabel	Lcom/fs/starfarer/ui/LabelImpl;
+	f	ooÒ000	levelLabel	Lcom/fs/starfarer/ui/LabelImpl;
 	f	return.int$super	hoverFader	Lcom/fs/graphics/util/Fader;
 	f	öOÒ000	lastLevel	F
 	f	ÕOÒ000	shouldFlash	Z

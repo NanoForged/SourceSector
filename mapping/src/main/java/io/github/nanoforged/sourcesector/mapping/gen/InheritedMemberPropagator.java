@@ -108,8 +108,11 @@ public final class InheritedMemberPropagator {
             Map<String, ClassStructure> structureByName,
             Map<String, Map<String, List<MappingEntry>>> membersByOwner,
             Map<String, String> targetClassByObfuscated) {
-        Set<String> ownFieldNames = memberNames(classStructure.fields());
-        Set<String> ownMethodNames = memberNames(classStructure.methods());
+        // 覆写/隐藏判定按「名+描述符」粒度：混淆器会给不同逻辑成员分配同名垃圾名
+        // （如子类声明 super()F、父类声明 super(ZZ)V），按名判定会把父类的
+        // super(ZZ)V 误判为已被子类覆写而跳过传播，子类引用侧 remap 不命中即分叉。
+        Set<String> ownFieldKeys = memberKeys(classStructure.fields());
+        Set<String> ownMethodKeys = memberKeys(classStructure.methods());
         String ownerNamed = targetClassByObfuscated.getOrDefault(classStructure.name(), classStructure.name());
 
         List<MappingEntry> propagated = new ArrayList<>();
@@ -131,7 +134,7 @@ public final class InheritedMemberPropagator {
                 continue;
             }
             for (ClassStructure.Member field : ancestor.fields()) {
-                if (ownFieldNames.contains(field.name())) {
+                if (ownFieldKeys.contains(field.name() + ":" + field.desc())) {
                     continue;
                 }
                 for (MappingEntry entry : lookup(membersByOwner, ancestorName, MappingEntry.Kind.FIELD, field.name())) {
@@ -143,7 +146,7 @@ public final class InheritedMemberPropagator {
                 }
             }
             for (ClassStructure.Member method : ancestor.methods()) {
-                if (method.name().startsWith("<") || ownMethodNames.contains(method.name())) {
+                if (method.name().startsWith("<") || ownMethodKeys.contains(method.name() + ":" + method.desc())) {
                     continue;
                 }
                 for (MappingEntry entry : lookup(membersByOwner, ancestorName, MappingEntry.Kind.METHOD, method.name())) {
@@ -177,11 +180,11 @@ public final class InheritedMemberPropagator {
         return entry.kind() + "#" + entry.obfuscatedName();
     }
 
-    private static Set<String> memberNames(List<ClassStructure.Member> members) {
-        Set<String> names = new HashSet<>();
+    private static Set<String> memberKeys(List<ClassStructure.Member> members) {
+        Set<String> keys = new HashSet<>();
         for (ClassStructure.Member member : members) {
-            names.add(member.name());
+            keys.add(member.name() + ":" + member.desc());
         }
-        return names;
+        return keys;
     }
 }

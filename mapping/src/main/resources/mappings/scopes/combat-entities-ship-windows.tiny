@@ -648,7 +648,7 @@ c com/fs/starfarer/combat/entities/ship/super com/fs/starfarer/combat/entities/s
 	m	null	disable	()V
 	m	new	disable	(Z)V
 	m	õ00000	isFullHealth	()Z
-	m	class	isDisabled	()Z
+	m	class	isDisabledOrForceDisabled	()Z
 	m	Ô00000	setHealth	(F)V
 	m	o00000	isForceDisabled	()Z
 	m	o00000	setForceDisabled	(Z)V
@@ -861,7 +861,7 @@ c com/fs/starfarer/combat/entities/ship/trackers/ooOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 	f	Ô00000	ammoPerSecond	F
 	f	o00000	reloadSize	F
 	f	class	reloadProgress	F
-	f	Ó00000	reloadProgress	F
+	f	Ó00000	reloadTime	F
 c com/fs/starfarer/combat/entities/ship/trackers/oooO com/fs/starfarer/combat/entities/ship/trackers/ShieldWeaponTracker
 	f	String.super	callbacks	Lcom/fs/starfarer/combat/entities/ship/trackers/ShieldWeaponCallbacks;
 	f	Óo0000	shieldType	Lcom/fs/starfarer/api/combat/ShieldAPI$ShieldType;

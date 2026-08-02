@@ -242,6 +242,31 @@ tasks.register<JavaExec>("remapGameClasspathToNamed") {
     }
 }
 
+// 独立链接校验任务：消费 remap 产物，不阻塞 remap/发布链——当前产物已知存在
+// 继承链名字分叉断裂，修复映射前接入发布链会直接失败；建议接入点见
+// docs/design/named-jar-link-validation.md（修复后挂到 publishNamedGameJars 依赖链前）。
+tasks.register<JavaExec>("verifyNamedJarLinks") {
+    group = "mapping"
+    description = "Verify member links inside named game jars (inheritance-chain name divergence -> NoSuchMethodError source)"
+    dependsOn(tasks.named("classes"))
+    // 校验消费 remap 产物：同一构建中两者都被调度时保证 remap 先行（不强制依赖，独立校验仍可用）。
+    mustRunAfter("remapGameClasspathToNamed")
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("io.github.nanoforged.sourcesector.mapping.gen.NamedJarLinkCli")
+
+    val reportFile = mappingReportsDir.map { it.file("named-jar-link-violations.txt") }
+    inputs.dir(namedGameJarsDir)
+    outputs.file(reportFile)
+
+    doFirst {
+        val jarDir = namedGameJarsDir.get()
+        require(jarDir.isDirectory) {
+            "named 游戏 jar 目录不存在: $jarDir — 请先运行 :mapping:remapGameClasspathToNamed"
+        }
+        args(listOf(jarDir.absolutePath, reportFile.get().asFile.absolutePath))
+    }
+}
+
 gameJarBaseNames.forEach { baseName ->
     val publicationName = namedGamePublicationName(baseName)
     tasks.register<JavaExec>("decompile${publicationName}ToSources") {
@@ -311,6 +336,8 @@ publishing {
 tasks.register("publishNamedGameJars") {
     group = "mapping"
     description = "Publish named game jars + decompiled sources to local repo build/named-game-repo/{platform}"
+    // 链接校验门禁：named 产物成员链接断裂（继承链名字分叉）时发布直接失败。
+    dependsOn("verifyNamedJarLinks")
     gameJarBaseNames.forEach { baseName ->
         val publicationTaskName = namedGamePublicationName(baseName)
             .replaceFirstChar { it.uppercase() }

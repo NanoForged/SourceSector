@@ -31,7 +31,9 @@ import java.util.stream.Stream;
  * 合并后输出
  * {@code outputDir/windows/ssoptimizer-windows-full.tiny}，
  * 输出前由 {@link InheritedMemberPropagator} 沿继承链补齐子类侧成员别名
- * （混淆器会把继承成员引用挂在子类 owner 上），并产出漂移报告
+ * （混淆器会把继承成员引用挂在子类 owner 上），经
+ * {@link FullMappingMerger#duplicateRemapTargetLines(List, List)} 质量门校验
+ * （同类内 remap 目标名撞名直接失败），并产出漂移报告
  * {@code reportDir/mapping-drift-windows.txt}。
  * linux jar 仅做结构扫描，产出跨平台指纹对位报告
  * {@code reportDir/cross-platform-match.txt}（CI 门禁：验证「双平台 jar 无结构差异」前提；
@@ -98,6 +100,28 @@ public final class FullMappingCli {
             priorityEntries.addAll(identityEntries);
             List<MappingEntry> merged = merger.merge(priorityEntries, scopeEntries, generated);
             merged = InheritedMemberPropagator.propagate(merged, classes);
+
+            // 继承对齐：scope 片段按类独立翻译，同一逻辑继承成员在声明类与子类侧可能得到
+            // 不同 named 名（子类侧是 swarm 分配的垃圾名），remap 按 owner 查表导致引用与
+            // 声明分叉（运行期 NoSuchMethodError，AssaultBattleStrategy 事故）。对齐器把
+            // 子类侧继承引用别名的 remap 目标统一为声明侧目标，并去重同 key 重复条目。
+            InheritedMemberAligner.AlignmentResult alignment = InheritedMemberAligner.align(merged, classes);
+            merged = alignment.entries();
+            for (String replacement : alignment.replacements()) {
+                System.out.println("[InheritedAlignment] 替换: " + replacement);
+            }
+            for (String warning : alignment.warnings()) {
+                System.out.println("[InheritedAlignment] 警告: " + warning);
+            }
+
+            // 质量门：remap 目标名同类撞名直接失败——否则 named jar 会含同名同描述符的重复
+            // 成员（JVM 非法，运行期表现为字段读写落空/方法调错）。只判定类实际声明的成员，
+            // 继承传播补的引用别名不产出类文件成员，不在判定范围。
+            List<String> remapTargetConflicts = FullMappingMerger.duplicateRemapTargetLines(merged, classes);
+            if (!remapTargetConflicts.isEmpty()) {
+                throw new MappingLookupException("全量表 remap 目标名冲突 (" + platform.id() + "):\n - "
+                        + String.join("\n - ", remapTargetConflicts));
+            }
 
             Path outputFile = outputDir.resolve(platform.id()).resolve("ssoptimizer-" + platform.id() + "-full.tiny");
             Files.createDirectories(outputFile.getParent());

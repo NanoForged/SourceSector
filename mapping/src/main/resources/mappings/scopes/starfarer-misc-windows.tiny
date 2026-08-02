@@ -400,7 +400,7 @@ c	com/fs/starfarer/D/return	com/fs/starfarer/O0OO/MusicManager
 	m	ÒO0000	getCurrentStateToken	()Ljava/lang/Object;
 	m	Ò00000	resumeCurrentMusic	()V
 	m	o00000	getCurrentTrackName	()Ljava/lang/String;
-	m	Object	stopCustomMusic	()V
+	m	Object	resumeCustomMusic	()V
 	m	Õ00000	pauseCustomMusic	()V
 	m	o00000	playCustomMusic	(IILjava/lang/String;)V
 	m	o00000	playCustomMusic	(IILjava/lang/String;Z)V
@@ -411,7 +411,7 @@ c	com/fs/starfarer/D/return	com/fs/starfarer/O0OO/MusicManager
 	m	ô00000	clearAllTokens	()V
 	m	Ô00000	hasPlayer	(Ljava/lang/Object;)Z
 	m	o00000	registerCustomPlayer	(Ljava/lang/Object;Ljava/lang/String;)V
-	m	return	stopCustomMusic	()V
+	m	return	stopCampaignMusic	()V
 	m	Ø00000	pauseMusic	()V
 	m	o00000	setPaused	(Z)V
 	m	ø00000	stopAllLoops	()V

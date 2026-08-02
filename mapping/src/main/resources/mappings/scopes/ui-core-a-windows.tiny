@@ -13,17 +13,17 @@ c	com/fs/starfarer/ui/A/B	com/fs/starfarer/ui/MenuPanel
 	m	fadeIn	fadeIn	()V
 	m	forceIn	forceIn	()V
 	m	add	add	(Lcom/fs/starfarer/ui/c;)Lcom/fs/starfarer/ui/OO0O;
-	f	øÔÒo00	menuWidth	F
-	f	private.new$while	menuWidth	F
+	f	øÔÒo00	fadeInDuration	F
+	f	private.new$while	fadeOutDuration	F
 	f	ÖÔÒo00	background	Lcom/fs/starfarer/ui/MenuPanel$Background;
-	f	String.Object$while	menuWidth	F
+	f	String.Object$while	borderInset	F
 	f	super.Object$while	itemCount	I
-	f	ÒÔÒo00	menuWidth	F
-	f	ôÔÒo00	menuWidth	F
+	f	ÒÔÒo00	itemSpacing	F
+	f	ôÔÒo00	itemBottomOffset	F
 	f	ÕÔÒo00	menuWidth	F
 	f	ÓÔÒo00	direction	Lcom/fs/starfarer/ui/HorizontalDirection;
 	f	õÔÒo00	menuItems	Ljava/util/List;
-	m	Ôo0000	renderBackground	(F)V
+	m	Ôo0000	renderItems	(F)V
 	m	interface.while	getContentHeight	()F
 	m	float.super	renderBackground	(F)V
 c	com/fs/starfarer/ui/A/B$o	com/fs/starfarer/ui/MenuPanel$MenuItem
@@ -109,31 +109,31 @@ c	com/fs/starfarer/ui/G	com/fs/starfarer/ui/ImageTextButton
 	m	setSpriteName	setSpriteName	(Ljava/lang/String;)V
 	m	setDisabledColor	setDisabledColor	(Ljava/awt/Color;)V
 	f	String.do$int	imagePanel	Lcom/fs/starfarer/ui/ImagePanel;
-	f	øoÖO00	fontPath	Ljava/lang/String;
-	f	OÒÖO00	textColor	Ljava/awt/Color;
-	f	if.do$int	textColor	Ljava/awt/Color;
+	f	øoÖO00	spriteName	Ljava/lang/String;
+	f	OÒÖO00	disabledColor	Ljava/awt/Color;
+	f	if.do$int	imageColor	Ljava/awt/Color;
 	f	void.do$int	disabledFader	Lcom/fs/graphics/util/Fader;
 	f	ÒÒÖO00	textLabel	Lcom/fs/starfarer/ui/LabelImpl;
-	f	ÕÒÖO00	fontPath	Ljava/lang/String;
+	f	ÕÒÖO00	text	Ljava/lang/String;
 	f	õoÖO00	fontPath	Ljava/lang/String;
 	f	ÓÒÖO00	textColor	Ljava/awt/Color;
 c	com/fs/starfarer/ui/O0oOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO	com/fs/starfarer/ui/CutPanel
 	f	ÔO0000	alignment	Lcom/fs/starfarer/api/ui/Alignment;
 	f	interface	cutStyle	Lcom/fs/starfarer/api/ui/CutStyle;
 	f	ÓO0000	fontRenderer	Lcom/fs/graphics/font/BitmapFontRenderer;
-	f	ö00000	textOffset	F
-	f	oO0000	textOffset	F
-	f	new.super	textOffset	F
-	f	null	TRANSPARENT_COLOR	Ljava/awt/Color;
-	f	Ø00000	TRANSPARENT_COLOR	Ljava/awt/Color;
+	f	ö00000	fontHeight	F
+	f	oO0000	fontScale	F
+	f	new.super	unusedPadding	F
+	f	null	color	Ljava/awt/Color;
+	f	Ø00000	highlightColor	Ljava/awt/Color;
 	f	class	scanlineSprite	Lcom/fs/graphics/Sprite;
 	f	ØO0000	transparentMode	Z
-	f	ÖO0000	TRANSPARENT_COLOR	Ljava/awt/Color;
+	f	ÖO0000	DIM_COLOR	Ljava/awt/Color;
 	f	õO0000	TRANSPARENT_COLOR	Ljava/awt/Color;
-	f	Ö00000	textOffset	F
-	f	while	textOffset	F
-	f	OO0000	textOffset	F
-	f	class.super	textOffset	F
+	f	Ö00000	alphaMultiplier	F
+	f	while	width	F
+	f	OO0000	height	F
+	f	class.super	cutInset	F
 	f	õ00000	textOffset	F
 	m	o00000	setCutStyle	(Lcom/fs/starfarer/api/ui/CutStyle;)Lcom/fs/starfarer/ui/CutPanel;
 	m	o00000	setAlignment	(Lcom/fs/starfarer/api/ui/Alignment;)Lcom/fs/starfarer/ui/CutPanel;
@@ -141,11 +141,11 @@ c	com/fs/starfarer/ui/O0oOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 	m	Ò00000	render	(FFF)V
 	m	Ô00000	getFontRenderer	()Lcom/fs/graphics/font/BitmapFontRenderer;
 	m	o00000	renderWithGlow	(FFFF)V
-	m	Ò00000	setSize	(FF)V
+	m	Ò00000	renderAligned	(FF)V
 	m	o00000	renderDisabled	(FFF)V
 	m	Object	renderCut	(FFF)V
 	m	Ò00000	setFontScale	(F)V
-	m	Object	setSize	(FF)V
+	m	Object	drawCutLines	(FF)V
 	m	o00000	setScale	(F)V
 	m	o00000	setSize	(FF)V
 	m	o00000	isVisible	()Z
@@ -526,34 +526,34 @@ c	com/fs/starfarer/ui/d	com/fs/starfarer/ui/LabelImpl
 	f	String.for$private	fontRenderer	Lcom/fs/graphics/font/BitmapFontRenderer;
 	f	øØØo00	position	Lcom/fs/starfarer/ui/PositionImpl;
 	f	ÓÖØo00	alignment	Lcom/fs/starfarer/api/ui/Alignment;
-	f	private.if$private	popFader	Lcom/fs/graphics/util/Fader;
-	f	ÓØØo00	popFader	Lcom/fs/graphics/util/Fader;
-	f	ÕÕØo00	onColor	Ljava/awt/Color;
+	f	private.if$private	flasher	Lcom/fs/graphics/util/Fader;
+	f	ÓØØo00	fader	Lcom/fs/graphics/util/Fader;
+	f	ÕÕØo00	color	Ljava/awt/Color;
 	f	if.for$private	tooltipLogic	Lcom/fs/starfarer/ui/TooltipComponent;
 	f	õÕØo00	tooltipComponent	Lcom/fs/starfarer/ui/ShowableComponent;
 	f	ÕÖØo00	parent	Lcom/fs/starfarer/ui/Panel;
 	f	øÕØo00	blinker	Lcom/fs/graphics/util/Blinker;
-	f	ÖÕØo00	blinkDuration	F
-	f	String.float$private	onColor	Ljava/awt/Color;
+	f	ÖÕØo00	opacity	F
+	f	String.float$private	backgroundColor	Ljava/awt/Color;
 	f	OØØo00	fontPath	Ljava/lang/String;
-	f	do.float$private	popFader	Lcom/fs/graphics/util/Fader;
+	f	do.float$private	mouseoverFader	Lcom/fs/graphics/util/Fader;
 	f	õØØo00	popFader	Lcom/fs/graphics/util/Fader;
-	f	void.float$private	blinkDuration	F
-	f	õÖØo00	blinkDuration	F
-	f	ôÖØo00	blinkDuration	F
-	f	ÖØØo00	blinkDuration	F
-	f	ÖÖØo00	blinkDuration	F
-	f	øÖØo00	onColor	Ljava/awt/Color;
-	f	private.float$private	blinkDuration	F
+	f	void.float$private	popHeight	F
+	f	õÖØo00	popOffsetX	F
+	f	ôÖØo00	popOffsetY	F
+	f	ÖØØo00	bgExtraRight	F
+	f	ÖÖØo00	bgExtraLeft	F
+	f	øÖØo00	additiveColor	Ljava/awt/Color;
+	f	private.float$private	blinkElapsed	F
 	f	ÒØØo00	blinkDuration	F
-	f	ÓÕØo00	forceTooltipLowerRight	Z
-	f	ÒÕØo00	forceTooltipLowerRight	Z
-	f	super.float$private	forceTooltipLowerRight	Z
-	f	super.for$private	tooltipPositionRelativeToAnchor	Lorg/lwjgl/util/vector/Vector2f;
+	f	ÓÕØo00	flashMode	Z
+	f	ÒÕØo00	highlightOnMouseover	Z
+	f	super.float$private	tooltipVisible	Z
+	f	super.for$private	tooltipOffsetFromCenter	Lorg/lwjgl/util/vector/Vector2f;
 	f	ÕØØo00	tooltipPositionRelativeToAnchor	Lorg/lwjgl/util/vector/Vector2f;
 	f	ÒÖØo00	tooltipAnchor	Lcom/fs/starfarer/ui/UIComponent;
 	f	ôÕØo00	forceTooltipLowerRight	Z
-	f	void.for$private	onColor	Ljava/awt/Color;
+	f	void.for$private	offColor	Ljava/awt/Color;
 	f	OÖØo00	onColor	Ljava/awt/Color;
 	f	if.float$private	blinkDelegate	Lcom/fs/graphics/util/BlinkCallback;
 	m	ÔøO000	renderAligned	()V
@@ -577,13 +577,13 @@ c	com/fs/starfarer/ui/Oo0o	com/fs/starfarer/ui/HotkeyHint
 	m	notiftyHidden	notiftyHidden	()V
 	m	notifyShown	notifyShown	()V
 	m	beforeShown	beforeShown	()V
-	f	ÖõõO00	unusedFloat	F
-	f	super.null$float	unusedFloat	F
-	f	ôõõO00	unusedLabel	Lcom/fs/starfarer/ui/LabelImpl;
-	f	ÕõõO00	unusedLabel	Lcom/fs/starfarer/ui/LabelImpl;
+	f	ÖõõO00	inset	F
+	f	super.null$float	belowSpacing	F
+	f	ôõõO00	titleLabel	Lcom/fs/starfarer/ui/LabelImpl;
+	f	ÕõõO00	subLabel	Lcom/fs/starfarer/ui/LabelImpl;
 	f	String.null$float	unusedLabel	Lcom/fs/starfarer/ui/LabelImpl;
-	f	ÓõõO00	unusedFontPath	Ljava/lang/String;
-	f	ÒõõO00	unusedFontPath	Ljava/lang/String;
+	f	ÓõõO00	titleFontPath	Ljava/lang/String;
+	f	ÒõõO00	subLabelFontPath	Ljava/lang/String;
 	f	void.null$float	unusedFontPath	Ljava/lang/String;
 	f	õõõO00	unusedFloat	F
 	m	Ô00000	createLabel	(Ljava/lang/String;Ljava/awt/Color;Lcom/fs/starfarer/api/ui/Alignment;Ljava/lang/String;)Lcom/fs/starfarer/ui/LabelImpl;

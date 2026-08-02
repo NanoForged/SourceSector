@@ -24,7 +24,7 @@ c	com/fs/starfarer/combat/systems/D$o	com/fs/starfarer/combat/systems/EmpArcTarg
 	f	Õ00000	SHIELD_HIT	Lcom/fs/starfarer/combat/systems/D$o;
 	f	super	$VALUES	[Lcom/fs/starfarer/combat/systems/EmpArcTargetType;
 c	com/fs/starfarer/combat/systems/D$oo	com/fs/starfarer/combat/systems/EmpArcGraphic
-	f	OO0000	fader	Lcom/fs/graphics/util/Fader;
+	f	OO0000	resetFader	Lcom/fs/graphics/util/Fader;
 	f	ø00000	sprite	Lcom/fs/graphics/Sprite;
 	f	Õ00000	coreColor	Ljava/awt/Color;
 	f	do	fringeColor	Ljava/awt/Color;
@@ -42,7 +42,7 @@ c	com/fs/starfarer/combat/systems/D$oo	com/fs/starfarer/combat/systems/EmpArcGra
 	f	Ò00000	renderGlowAtEnd	Z
 	f	void	fadedOutAtStart	Z
 	f	Ö00000	coreWidthOverride	F
-	f	õ00000	fader	Lcom/fs/graphics/util/Fader;
+	f	õ00000	fadeInFader	Lcom/fs/graphics/util/Fader;
 	m	Ó00000	reset	(F)V
 	m	o00000	generatePoints	(Ljava/util/List;Z)V
 	m	o00000	fadeIn	(F)V

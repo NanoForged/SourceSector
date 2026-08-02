@@ -541,7 +541,7 @@ c	com/fs/starfarer/ui/impl/StandardTooltipV2$13	com/fs/starfarer/ui/impl/Standar
 	f	ôÓõO00	titleColor	Ljava/awt/Color;
 	f	ØÓõO00	text	Ljava/lang/String;
 c	com/fs/starfarer/ui/impl/StandardTooltipV2$14	com/fs/starfarer/ui/impl/StandardTooltipV2$TextTooltip
-	f	ÒÒôO00	text	Ljava/lang/String;
+	f	ÒÒôO00	title	Ljava/lang/String;
 	f	for.for$if	color	Ljava/awt/Color;
 	f	oÒôO00	modifier	Lcom/fs/starfarer/ui/impl/StandardTooltipV2$OOo;
 	m	beforeShown	beforeShown	()V

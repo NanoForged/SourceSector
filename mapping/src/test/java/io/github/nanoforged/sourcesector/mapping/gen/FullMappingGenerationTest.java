@@ -145,6 +145,42 @@ class FullMappingGenerationTest {
         assertUnnamedWithIntermediary(mergedRepository.requireMethodByObfuscatedName("com/example/A", "Object", "()V"), "m_");
     }
 
+    @Test
+    void duplicateRemapTargetsInMergedTableAreDetected() {
+        List<ClassStructure> classes = List.of(
+                new ClassStructure("com/example/A", "java/lang/Object", List.of(),
+                        List.of(new ClassStructure.Member("a", "F", 1),
+                                new ClassStructure.Member("b", "F", 1)),
+                        List.of(new ClassStructure.Member("a", "()V", 1),
+                                new ClassStructure.Member("b", "(F)V", 1))),
+                new ClassStructure("com/example/B", "java/lang/Object", List.of(),
+                        List.of(new ClassStructure.Member("a", "F", 1)),
+                        List.of()));
+
+        // 同类内两个已声明混淆成员的 remap 目标名与描述符相同：撞名冲突（LabelImpl 事故的回归锁）。
+        List<MappingEntry> collision = List.of(
+                MappingEntry.classEntry("com/example/A", "C_aaa", "com/example/Alpha"),
+                MappingEntry.fieldEntry("com/example/A", "com/example/Alpha", "a", "f_a", "speed", "F"),
+                MappingEntry.fieldEntry("com/example/A", "com/example/Alpha", "b", "f_b", "speed", "F"));
+        List<String> conflicts = FullMappingMerger.duplicateRemapTargetLines(collision, classes);
+        assertEquals(1, conflicts.size(), "同类同目标名同描述符字段应报一条冲突: " + conflicts);
+
+        // 未命名成员落各自 intermediary 哈希锚点名，互不碰撞；同一混淆成员重复出现不算冲突；
+        // owner 未声明的成员条目（继承传播的引用别名）即使目标名撞名也不产出类文件成员，不报。
+        List<MappingEntry> clean = List.of(
+                MappingEntry.classEntry("com/example/A", "C_aaa", "com/example/Alpha"),
+                MappingEntry.fieldEntry("com/example/A", "com/example/Alpha", "a", "f_a", null, "F"),
+                MappingEntry.fieldEntry("com/example/A", "com/example/Alpha", "b", "f_b", null, "F"),
+                MappingEntry.fieldEntry("com/example/A", "com/example/Alpha", "a", "f_a", "speed", "F"),
+                MappingEntry.methodEntry("com/example/A", "com/example/Alpha", "a", "m_a", "render", "()V"),
+                MappingEntry.methodEntry("com/example/A", "com/example/Alpha", "b", "m_b", "render", "(F)V"),
+                MappingEntry.classEntry("com/example/B", "C_bbb", "com/example/Beta"),
+                MappingEntry.fieldEntry("com/example/B", "com/example/Beta", "a", "f_a2", "speed", "F"),
+                MappingEntry.fieldEntry("com/example/B", "com/example/Beta", "ghost", "f_g", "speed", "F"));
+        assertTrue(FullMappingMerger.duplicateRemapTargetLines(clean, classes).isEmpty(),
+                "intermediary 锚点 / 重载 / 跨 owner 同名 / 同成员重复条目 / 未声明别名都不应报冲突");
+    }
+
     private static void assertUnnamedWithIntermediary(MappingEntry entry, String intermediaryPrefix) {
         assertNull(entry.namedName(), "不可提升的成员 named 列应为空: " + entry.obfuscatedName());
         assertTrue(entry.intermediaryName().startsWith(intermediaryPrefix),

@@ -27,6 +27,8 @@ import java.util.stream.Stream;
  * <p>
  * scope 之间必须互不相交：同一混淆类/成员被两个 scope 映射、或同一 named 类名被两个 scope
  * 用于不同混淆类，都属于冲突，{@link #crossScopeConflictLines(List)} 会逐条报告并指明两个 scope。
+ * 片段内部同一类内多个混淆成员撞同一个 named 名（描述符相同）同样是冲突——remap 产物会含
+ * 同名同描述符的重复成员，由 {@link #duplicateNamedMemberLines(List)} 检查。
  */
 public final class ScopeFragments {
     private ScopeFragments() {
@@ -148,6 +150,51 @@ public final class ScopeFragments {
                 if (previousScope != null && !previousScope.equals(fragment.scope())) {
                     conflicts.add("混淆成员 " + entry.ownerObfuscatedName() + '#' + entry.obfuscatedName()
                             + " 同时被 scope '" + previousScope + "' 与 '" + fragment.scope() + "' 映射");
+                }
+            }
+        }
+        return conflicts;
+    }
+
+    /**
+     * 检测片段内部同类同名成员冲突（语义撞名）。
+     * <p>
+     * 同一类内两个不同混淆成员被赋予相同 named 名、且描述符相同（比较前按全部片段的
+     * 类条目做 named→obf 换算）时，remap 产物将出现同名同描述符的重复字段/方法——
+     * JVM 规范不允许，且成员引用解析恒定命中首个匹配项，其余成员的读写全部落空
+     * （运行期表现为 NPE 或逻辑错乱）。该类冲突发生在单个 scope 内部，
+     * {@link #crossScopeConflictLines(List)} 的跨 scope 判据覆盖不到，必须单独检查。
+     *
+     * @param fragments scope 片段列表
+     * @return 冲突描述行（每条指明 scope、owner 类与两个混淆成员）；无冲突返回空列表
+     */
+    public static List<String> duplicateNamedMemberLines(List<ScopeFragment> fragments) {
+        Objects.requireNonNull(fragments, "fragments");
+
+        Map<String, String> namedToObfuscated = new HashMap<>();
+        for (ScopeFragment fragment : fragments) {
+            for (MappingEntry entry : fragment.entries()) {
+                if (entry.isClass()) {
+                    namedToObfuscated.put(entry.namedName(), entry.obfuscatedName());
+                }
+            }
+        }
+
+        List<String> conflicts = new ArrayList<>();
+        for (ScopeFragment fragment : fragments) {
+            Map<String, String> obfuscatedByTargetKey = new LinkedHashMap<>();
+            for (MappingEntry entry : fragment.entries()) {
+                if (entry.isClass()) {
+                    continue;
+                }
+                String targetKey = entry.ownerObfuscatedName() + '#' + entry.kind() + '#'
+                        + entry.namedName() + '#' + toObfuscatedDescriptor(entry.descriptor(), namedToObfuscated);
+                String previous = obfuscatedByTargetKey.putIfAbsent(targetKey, entry.obfuscatedName());
+                if (previous != null && !previous.equals(entry.obfuscatedName())) {
+                    conflicts.add("[scope '" + fragment.scope() + "'] 类 " + entry.ownerObfuscatedName()
+                            + " 内混淆成员 " + previous + " 与 " + entry.obfuscatedName()
+                            + " 同映射为 named 成员 " + entry.namedName()
+                            + "（描述符相同），remap 产物将含重复成员");
                 }
             }
         }

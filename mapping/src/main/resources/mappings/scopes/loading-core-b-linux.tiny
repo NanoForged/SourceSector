@@ -132,7 +132,7 @@ c	com/fs/starfarer/loading/V$oo	com/fs/starfarer/loading/ShipRoles$ShipRole
 	m	super	addEntry	(Ljava/lang/String;F)V
 	m	super	addEntry	(Lcom/fs/starfarer/loading/V$o;)V
 	m	super	getEntries	()Ljava/util/List;
-	m	super	setFallback	(Lcom/fs/starfarer/loading/V$Oo;)V
+	m	super	setFallback2	(Lcom/fs/starfarer/loading/V$Oo;)V
 	m	Ò00000	getRoleId	()Ljava/lang/String;
 	m	Ó00000	getFallback	()Lcom/fs/starfarer/loading/V$Oo;
 	m	String	getFallback2	()Lcom/fs/starfarer/loading/V$Oo;

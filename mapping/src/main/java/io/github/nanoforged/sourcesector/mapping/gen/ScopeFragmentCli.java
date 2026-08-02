@@ -28,6 +28,8 @@ import java.util.stream.Stream;
  * <ul>
  *     <li>可解析（Tiny v2 格式，解析失败直接报错）；</li>
  *     <li>跨 scope 混淆 key / named 类名唯一性（冲突指明两个 scope）；</li>
+ *     <li>片段内部同类内 named 成员撞名（同名同描述符的多个混淆成员映射为同一 named 名，
+ *     remap 产物将含重复成员，运行期表现为字段读写落空）；</li>
  *     <li>每条目的 jar 一致性（以入库游戏 jar 为唯一事实源，成员按 name+desc 精确匹配，
  *     描述符 named→obf 换算上下文取合并后全量表的类条目，覆盖引用其他 scope /
  *     人工表 named 类的情形）；</li>
@@ -98,6 +100,11 @@ public final class ScopeFragmentCli {
             for (String conflict : conflicts) {
                 report.add("冲突: " + conflict);
                 problems.add("[" + platform.id() + "] " + conflict);
+            }
+            List<String> duplicateMembers = ScopeFragments.duplicateNamedMemberLines(fragments);
+            for (String duplicate : duplicateMembers) {
+                report.add("撞名: " + duplicate);
+                problems.add("[" + platform.id() + "] " + duplicate);
             }
             if (fragments.isEmpty()) {
                 continue;
@@ -194,6 +201,8 @@ public final class ScopeFragmentCli {
             }
         }
         List<String> problems = new ArrayList<>(ScopeFragments.extensionAwareConflictLines(others, fragment));
+        // 候选片段内部的同类撞名检查（描述符换算上下文仅含候选自身类条目，表外引用按原样最佳努力比较）。
+        problems.addAll(ScopeFragments.duplicateNamedMemberLines(List.of(fragment)));
         for (MappingEntry entry : fragment.entries()) {
             if (entry.isClass() && entry.namedName().length() > MAX_NAMED_CLASS_NAME_LENGTH) {
                 problems.add("named 类名超长（" + entry.namedName().length()

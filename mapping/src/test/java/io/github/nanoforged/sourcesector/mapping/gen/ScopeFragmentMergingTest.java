@@ -202,6 +202,45 @@ class ScopeFragmentMergingTest {
     }
 
     @Test
+    void duplicateNamedMembersInsideOneClassAreDetected() {
+        // 同类内两个不同混淆字段映射为同一 named 名且描述符相同：撞名冲突。
+        List<ScopeFragment> collision = List.of(new ScopeFragment("scope-a", List.of(
+                MappingEntry.classEntry("com/example/A", "com/example/Alpha"),
+                MappingEntry.fieldEntry("com/example/A", "com/example/Alpha", "a", "speed", "F"),
+                MappingEntry.fieldEntry("com/example/A", "com/example/Alpha", "b", "speed", "F"))));
+        List<String> conflicts = ScopeFragments.duplicateNamedMemberLines(collision);
+        assertEquals(1, conflicts.size(), "同类同名同描述符字段应报一条冲突: " + conflicts);
+        assertTrue(conflicts.get(0).contains("scope-a") && conflicts.get(0).contains("speed"),
+                "冲突信息应指明 scope 与撞名成员: " + conflicts.get(0));
+
+        // 描述符不同的同名方法（合法重载）不报。
+        List<ScopeFragment> overload = List.of(new ScopeFragment("scope-a", List.of(
+                MappingEntry.classEntry("com/example/A", "com/example/Alpha"),
+                MappingEntry.methodEntry("com/example/A", "com/example/Alpha", "a", "render", "()V"),
+                MappingEntry.methodEntry("com/example/A", "com/example/Alpha", "b", "render", "(F)V"))));
+        assertTrue(ScopeFragments.duplicateNamedMemberLines(overload).isEmpty(),
+                "同名不同描述符的方法重载不应报冲突");
+
+        // 同名同描述符但分布在不同 owner 类：不报（类维度各自唯一）。
+        List<ScopeFragment> differentOwners = List.of(new ScopeFragment("scope-a", List.of(
+                MappingEntry.classEntry("com/example/A", "com/example/Alpha"),
+                MappingEntry.fieldEntry("com/example/A", "com/example/Alpha", "a", "speed", "F"),
+                MappingEntry.classEntry("com/example/B", "com/example/Beta"),
+                MappingEntry.fieldEntry("com/example/B", "com/example/Beta", "b", "speed", "F"))));
+        assertTrue(ScopeFragments.duplicateNamedMemberLines(differentOwners).isEmpty(),
+                "不同 owner 类的同名字段不应报冲突");
+
+        // named 描述符写法不同但按片段类条目换算后相同：仍应报冲突。
+        List<ScopeFragment> descriptorConversion = List.of(new ScopeFragment("scope-a", List.of(
+                MappingEntry.classEntry("com/example/A", "com/example/Alpha"),
+                MappingEntry.classEntry("com/example/B", "com/example/Beta"),
+                MappingEntry.methodEntry("com/example/A", "com/example/Alpha", "a", "accept", "(Lcom/example/Beta;)V"),
+                MappingEntry.methodEntry("com/example/A", "com/example/Alpha", "b", "accept", "(Lcom/example/B;)V"))));
+        assertEquals(1, ScopeFragments.duplicateNamedMemberLines(descriptorConversion).size(),
+                "描述符经 named→obf 换算后相同的撞名应报冲突");
+    }
+
+    @Test
     void emptyScopesKeepExistingBehavior() throws Exception {
         // 不存在的目录与空目录都返回空片段列表。
         assertTrue(ScopeFragments.load(tempDir.resolve("scopes"), MappingPlatform.LINUX).isEmpty());

@@ -648,7 +648,7 @@ c com/fs/starfarer/combat/entities/ship/super com/fs/starfarer/combat/entities/s
 	m	null	disable	()V
 	m	new	disable	(Z)V
 	m	õ00000	isFullHealth	()Z
-	m	class	isDisabled	()Z
+	m	class	isDisabledOrForceDisabled	()Z
 	m	Ô00000	setHealth	(F)V
 	m	o00000	isForceDisabled	()Z
 	m	o00000	setForceDisabled	(Z)V

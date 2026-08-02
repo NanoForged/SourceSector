@@ -45,7 +45,7 @@ c com/fs/starfarer/combat/entities/ContrailEngine$ContrailWidthMode com/fs/starf
 c com/fs/starfarer/combat/entities/ContrailEngine$Oo com/fs/starfarer/combat/entities/ContrailEngine$Oo
 	f	Ö00000	dir	Lorg/lwjgl/util/vector/Vector2f;
 	f	ö00000	vel	Lorg/lwjgl/util/vector/Vector2f;
-	f	oO0000	width	F
+	f	oO0000	baseWidth	F
 	f	null	length	F
 	f	new	textureOffset	F
 	f	õ00000	contrailEngine	Lcom/fs/starfarer/combat/entities/ContrailEngine;
@@ -229,7 +229,7 @@ c com/fs/starfarer/combat/entities/if com/fs/starfarer/combat/entities/BeamEntit
 c com/fs/starfarer/combat/entities/L com/fs/starfarer/combat/entities/RayExtender
 	m	Ô00000	getFrom	()Lorg/lwjgl/util/vector/Vector2f;
 	m	return	getTo	()Lorg/lwjgl/util/vector/Vector2f;
-	m	int	getVelocity	()Lorg/lwjgl/util/vector/Vector2f;
+	m	int	getCurrentPoint	()Lorg/lwjgl/util/vector/Vector2f;
 	m	o00000	advance	(FZ)V
 	m	ö00000	isDone	()Z
 	m	o00000	getBrightnessMult	()F

@@ -96,6 +96,31 @@ class InheritedMemberPropagatorTest {
     }
 
     @Test
+    void sameNameDifferentDescriptorDoesNotBlockPropagation() {
+        // 子类声明 super()F、父类声明 super(ZZ)V——混淆器给不同逻辑方法分配同名垃圾名，
+        // 按「名」判定会把父类 super(ZZ)V 误判为已被子类覆写而跳过传播（AssaultBattleStrategy 事故根因）。
+        List<ClassStructure> classes = List.of(
+                new ClassStructure("a/A", "java/lang/Object", List.of(),
+                        List.of(),
+                        List.of(method("super", "(ZZ)V"), method("<init>", "()V"))),
+                new ClassStructure("a/B", "a/A", List.of(),
+                        List.of(),
+                        List.of(method("super", "()F"), method("<init>", "()V"))));
+        List<MappingEntry> merged = List.of(
+                MappingEntry.classEntry("a/A", "named/A"),
+                MappingEntry.methodEntry("a/A", "named/A", "super", "computeFleetPoints", "(ZZ)V"),
+                MappingEntry.classEntry("a/B", "named/B"),
+                MappingEntry.methodEntry("a/B", "named/B", "super", "advance", "()F"));
+
+        List<MappingEntry> result = InheritedMemberPropagator.propagate(merged, classes);
+
+        assertTrue(result.stream().anyMatch(entry -> "a/B".equals(entry.ownerObfuscatedName())
+                        && "super".equals(entry.obfuscatedName()) && "(ZZ)V".equals(entry.descriptor())
+                        && "computeFleetPoints".equals(entry.namedName())),
+                "子类声明同名不同描述符方法不构成覆写，父类成员应正常传播到子类: " + result);
+    }
+
+    @Test
     void propagatedEntriesStayInsideTheirClassBlock() {
         List<ClassStructure> classes = List.of(
                 new ClassStructure("a/A", "java/lang/Object", List.of(),

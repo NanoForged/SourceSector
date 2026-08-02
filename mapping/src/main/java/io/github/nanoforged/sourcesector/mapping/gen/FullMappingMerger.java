@@ -170,6 +170,62 @@ public final class FullMappingMerger {
     }
 
     /**
+     * 检测全量表同类内 remap 目标名冲突。
+     * <p>
+     * remap 目标名取 {@link MappingEntry#namedOrIntermediary()}（named 非空否则 intermediary
+     * 占位名）。同一 owner 类内两个不同混淆成员的目标名与描述符（全量表 canonical，obf 侧）
+     * 完全相同时，remap 产物将出现同名同描述符的重复字段/方法——JVM 规范不允许，且成员引用
+     * 解析恒定命中首个匹配项，其余成员的读写全部落空（运行期表现为 NPE 或逻辑错乱）。
+     * 冲突来源：语义层撞名（scope/人工表把多个混淆成员映射为同一 named 名）或占位名碰撞。
+     * 生成全量表后必须通过该检查方可发布。
+     * <p>
+     * 检查只覆盖 owner 类实际声明的成员：{@link InheritedMemberPropagator} 为继承引用
+     * 补齐的别名条目（owner 类未声明该成员，仅用于引用重命名）不产出类文件成员，
+     * 即使目标名撞名也不影响产物合法性，不参与判定。
+     *
+     * @param mergedEntries 合并后的全量条目
+     * @param classes       jar 扫描出的类结构（判定成员是否为 owner 类实际声明）
+     * @return 冲突描述行（每条指明 owner 类与两个混淆成员）；无冲突返回空列表
+     */
+    public static List<String> duplicateRemapTargetLines(List<MappingEntry> mergedEntries,
+                                                         List<ClassStructure> classes) {
+        Objects.requireNonNull(mergedEntries, "mergedEntries");
+        Objects.requireNonNull(classes, "classes");
+
+        Set<String> declaredKeys = new HashSet<>();
+        for (ClassStructure classStructure : classes) {
+            for (ClassStructure.Member field : classStructure.fields()) {
+                declaredKeys.add(classStructure.name() + "#FIELD#" + field.name() + '#' + field.desc());
+            }
+            for (ClassStructure.Member method : classStructure.methods()) {
+                declaredKeys.add(classStructure.name() + "#METHOD#" + method.name() + '#' + method.desc());
+            }
+        }
+
+        Map<String, String> obfuscatedByTargetKey = new LinkedHashMap<>();
+        List<String> conflicts = new ArrayList<>();
+        for (MappingEntry entry : mergedEntries) {
+            if (entry.isClass()) {
+                continue;
+            }
+            if (!declaredKeys.contains(entry.ownerObfuscatedName() + '#' + entry.kind() + '#'
+                    + entry.obfuscatedName() + '#' + entry.descriptor())) {
+                // 继承传播补的引用别名（owner 未声明该成员），不产出类文件成员，跳过。
+                continue;
+            }
+            String targetKey = entry.ownerObfuscatedName() + '#' + entry.kind() + '#'
+                    + entry.namedOrIntermediary() + '#' + entry.descriptor();
+            String previous = obfuscatedByTargetKey.putIfAbsent(targetKey, entry.obfuscatedName());
+            if (previous != null && !previous.equals(entry.obfuscatedName())) {
+                conflicts.add("类 " + entry.ownerObfuscatedName() + " 内混淆成员 " + previous + " 与 "
+                        + entry.obfuscatedName() + " 的 remap 目标同为 " + entry.namedOrIntermediary()
+                        + "（描述符相同），remap 产物将含重复成员");
+            }
+        }
+        return conflicts;
+    }
+
+    /**
      * 计算漂移报告条目：人工映射在 jar 当前结构中找不到对应类/成员的条目列表。
      *
      * @param humanEntries 人工映射条目

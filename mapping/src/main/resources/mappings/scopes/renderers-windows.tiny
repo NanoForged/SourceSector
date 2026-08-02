@@ -495,7 +495,7 @@ c	com/fs/starfarer/renderers/L$o	com/fs/starfarer/renderers/BeamRenderer$BeamVis
 c	com/fs/starfarer/renderers/Q	com/fs/starfarer/renderers/FloatingTextManager
 	m	super	addText	(FFFFLjava/awt/Color;Lcom/fs/starfarer/combat/E/B;Lcom/fs/starfarer/combat/E/B;)V
 	m	super	addText	(FFLjava/lang/String;FLjava/awt/Color;Lcom/fs/starfarer/combat/E/B;Lcom/fs/starfarer/combat/E/B;)Lcom/fs/starfarer/renderers/O00O;
-	m	super	advance	(F)V
+	m	super	render	(F)V
 	m	super	isShowingText	(Lcom/fs/starfarer/combat/E/B;)Z
 	f	super	floatingTexts	Ljava/util/List;
 	f	Ò00000	textCounts	Ljava/util/HashMap;

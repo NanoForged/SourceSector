@@ -121,7 +121,7 @@ c	com/fs/starfarer/campaign/ui/MarketConditionsWidget	MarketConditionsWidget
 	m	create	create	()V
 	m	autoSize	autoSize	()V
 	m	advanceImpl	advanceImpl	(F)V
-	f	oöøO00	baseColor	Ljava/awt/Color;
+	f	oöøO00	oöøO00	Ljava/awt/Color;
 	f	ÔöøO00	showEmptyLabel	Z
 	f	öõøO00	width	F
 	m	o00000	buildConditionRow	(FLcom/fs/starfarer/ui/UIComponent;FLjava/util/Map;Ljava/util/List;)Lcom/fs/starfarer/ui/UIComponent;

@@ -4,7 +4,7 @@ c	com/fs/starfarer/ui/newui/AbilityPickerDialog	AbilityPickerDialog
 	f	ôÔô000	abilityPanel	Lcom/fs/starfarer/ui/newui/H;
 	f	super.if$String	defaultButton	Lcom/fs/starfarer/ui/n;
 	f	ÒÕô000	hyperspaceButton	Lcom/fs/starfarer/ui/n;
-	f	void.if$String	clearSlotButton	Lcom/fs/starfarer/ui/n;
+	f	void.if$String	clearAbilityButton	Lcom/fs/starfarer/ui/n;
 	m	syncWithMode	syncWithMode	(Z)V
 	m	createSelectionPanel	createSelectionPanel	()V
 	m	show	show	(FF)V

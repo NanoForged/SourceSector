@@ -992,10 +992,10 @@ c	com/fs/starfarer/combat/E/F	com/fs/starfarer/combat/o0OO/Damage
 	m	setModifier	setModifier	(Lcom/fs/starfarer/api/combat/MutableStat;)V
 	m	isForceHardFlux	isForceHardFlux	()Z
 	m	setForceHardFlux	setForceHardFlux	(Z)V
-	f	ô00000	multiplier	F
+	f	ô00000	damage	F
 	f	õ00000	type	Lcom/fs/starfarer/api/combat/DamageType;
 	f	String	stats	Lcom/fs/starfarer/api/combat/MutableShipStatsAPI;
-	f	Õ00000	dpsDuration	F
+	f	Õ00000	hardFluxFraction	F
 	f	Ò00000	damageMultStat	Lcom/fs/starfarer/api/combat/MutableStat;
 	f	do	multiplier	F
 	f	if	isDps	Z

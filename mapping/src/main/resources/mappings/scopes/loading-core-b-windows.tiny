@@ -132,7 +132,7 @@ c	com/fs/starfarer/loading/O0Oo$oo	com/fs/starfarer/loading/ShipRoles$ShipRole
 	m	o00000	addEntry	(Ljava/lang/String;F)V
 	m	o00000	addEntry	(Lcom/fs/starfarer/loading/O0Oo$o;)V
 	m	o00000	getEntries	()Ljava/util/List;
-	m	o00000	setFallback	(Lcom/fs/starfarer/loading/O0Oo$Oo;)V
+	m	o00000	setFallback2	(Lcom/fs/starfarer/loading/O0Oo$Oo;)V
 	m	new	getRoleId	()Ljava/lang/String;
 	m	Ó00000	getFallback	()Lcom/fs/starfarer/loading/O0Oo$Oo;
 	m	Ô00000	getFallback2	()Lcom/fs/starfarer/loading/O0Oo$Oo;
@@ -386,7 +386,7 @@ c	com/fs/starfarer/loading/B	com/fs/starfarer/loading/HullVariantSpecStore
 	m	Ó00000	clear	()V
 	m	Ó00000	removeVariant	(Ljava/lang/String;)V
 	m	new	loadMissionVariants	()V
-	m	new	removeVariant	(Ljava/lang/String;)V
+	m	new	new	(Ljava/lang/String;)V
 	m	Ô00000	containsVariant	(Ljava/lang/String;)Z
 
 	f	Object	hullVariants	Ljava/util/Map;

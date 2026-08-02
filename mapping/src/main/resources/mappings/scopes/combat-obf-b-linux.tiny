@@ -992,17 +992,17 @@ c	com/fs/starfarer/combat/o0OO/F	com/fs/starfarer/combat/o0OO/Damage
 	m	setModifier	setModifier	(Lcom/fs/starfarer/api/combat/MutableStat;)V
 	m	isForceHardFlux	isForceHardFlux	()Z
 	m	setForceHardFlux	setForceHardFlux	(Z)V
-	f	oO0000	damage	F
-	f	ô00000	multiplier	F
+	f	oO0000	multiplier	F
+	f	ô00000	damage	F
 	f	ö00000	dps	Z
-	f	return	fluxComponent	F
-	f	o00000	hardFluxFraction	F
+	f	return	dpsDuration	F
+	f	o00000	fluxComponent	F
 	f	int	type	Lcom/fs/starfarer/api/combat/DamageType;
 	f	Ô00000	stats	Lcom/fs/starfarer/api/combat/MutableShipStatsAPI;
-	f	Õ00000	dpsDuration	F
+	f	Õ00000	hardFluxFraction	F
 	f	Ø00000	missile	Z
-	f	for	modifiersApplied	Z
-	f	Object	overrideStats	Z
+	f	for	softFlux	Z
+	f	Object	forceHardFlux	Z
 	f	Ò00000	damageMultStat	Lcom/fs/starfarer/api/combat/MutableStat;
 	f	ø00000	damageTypeSwitchTable	[I
 	m	$SWITCH_TABLE$com$fs$starfarer$api$combat$DamageType	getDamageTypeSwitchTable	()[I

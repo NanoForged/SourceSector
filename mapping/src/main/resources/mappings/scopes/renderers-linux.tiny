@@ -495,7 +495,7 @@ c	com/fs/starfarer/renderers/OO0OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 c	com/fs/starfarer/renderers/Q	com/fs/starfarer/renderers/FloatingTextManager
 	m	o00000	addText	(FFFFLjava/awt/Color;Lcom/fs/starfarer/combat/o0OO/B;Lcom/fs/starfarer/combat/o0OO/B;)V
 	m	o00000	addText	(FFLjava/lang/String;FLjava/awt/Color;Lcom/fs/starfarer/combat/o0OO/B;Lcom/fs/starfarer/combat/o0OO/B;)Lcom/fs/starfarer/renderers/O00O;
-	m	o00000	advance	(F)V
+	m	o00000	render	(F)V
 	m	o00000	isShowingText	(Lcom/fs/starfarer/combat/o0OO/B;)Z
 	f	o00000	floatingTexts	Ljava/util/List;
 	f	new	textCounts	Ljava/util/HashMap;

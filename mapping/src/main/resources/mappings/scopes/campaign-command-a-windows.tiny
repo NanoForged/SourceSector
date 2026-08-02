@@ -352,7 +352,7 @@ c	com/fs/starfarer/campaign/command/HullmodBlueprintBrowser	com/fs/starfarer/cam
 	m	autoEnableSet	autoEnableSet	(Z)V
 	m	getAutoEnableSubject	getAutoEnableSubject	()Ljava/lang/String;
 	m	isAutoEnableSet	isAutoEnableSet	()Z
-c	com/fs/starfarer/campaign/command/HullmodBlueprintBrowser$1	com/fs/starfarer/campaign/command/RowColumnComparator
+c	com/fs/starfarer/campaign/command/HullmodBlueprintBrowser$1	com/fs/starfarer/campaign/command/HullmodColumnComparator
 	m	o00000	compare	(Lcom/fs/starfarer/campaign/ui/B;Lcom/fs/starfarer/campaign/ui/B;)I
 	f	this$0	outer	Lcom/fs/starfarer/campaign/command/HullmodBlueprintBrowser;
 	f	val$id	sortColumn	Ljava/lang/Object;
@@ -399,7 +399,7 @@ c	com/fs/starfarer/campaign/command/IntelIncomePanel$2	com/fs/starfarer/campaign
 	m	super	compare	(Lcom/fs/starfarer/api/campaign/econ/MonthlyReport$FDNode;Lcom/fs/starfarer/api/campaign/econ/MonthlyReport$FDNode;)I
 	f	this$0	outer	Lcom/fs/starfarer/campaign/command/IntelIncomePanel;
 	f	val$id	sortColumn	Lcom/fs/starfarer/campaign/command/Column;
-c	com/fs/starfarer/campaign/command/IntelIncomePanel$o	com/fs/starfarer/campaign/command/Column
+c	com/fs/starfarer/campaign/command/IntelIncomePanel$o	com/fs/starfarer/campaign/command/IncomeColumn
 	m	values	values	()[Lcom/fs/starfarer/campaign/command/IntelIncomePanel$o;
 	m	valueOf	valueOf	(Ljava/lang/String;)Lcom/fs/starfarer/campaign/command/IntelIncomePanel$o;
 	f	new	DESC	Lcom/fs/starfarer/campaign/command/IntelIncomePanel$o;

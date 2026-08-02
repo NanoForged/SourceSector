@@ -64,7 +64,7 @@ c com/fs/starfarer/combat/entities/ContrailEngine$ContrailWidthMode com/fs/starf
 c com/fs/starfarer/combat/entities/ContrailEngine$Oo com/fs/starfarer/combat/entities/ContrailEngine$Oo
 	f	Õ00000	dir	Lorg/lwjgl/util/vector/Vector2f;
 	f	ö00000	vel	Lorg/lwjgl/util/vector/Vector2f;
-	f	oO0000	width	F
+	f	oO0000	baseWidth	F
 	f	for	elapsed	F
 	f	ô00000	length	F
 	f	int	contrailEngine	Lcom/fs/starfarer/combat/entities/ContrailEngine;
@@ -132,7 +132,7 @@ c com/fs/starfarer/combat/entities/EmitterFactory$5 com/fs/starfarer/combat/enti
 c com/fs/starfarer/combat/entities/for com/fs/starfarer/combat/entities/RayExtender
 	m	Ô00000	getFrom	()Lorg/lwjgl/util/vector/Vector2f;
 	m	Ö00000	getTo	()Lorg/lwjgl/util/vector/Vector2f;
-	m	õ00000	getVelocity	()Lorg/lwjgl/util/vector/Vector2f;
+	m	õ00000	getCurrentPoint	()Lorg/lwjgl/util/vector/Vector2f;
 	m	o00000	advance	(FZ)V
 	m	ö00000	isDone	()Z
 	m	o00000	getBrightnessMult	()F
