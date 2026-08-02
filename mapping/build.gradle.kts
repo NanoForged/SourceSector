@@ -324,6 +324,25 @@ publishing {
                 }
             }
         }
+
+        // 全量 tiny 表构件（SDG reobfJar 等构建侧 remap 消费的映射源）
+        create<MavenPublication>("fullMappings") {
+            groupId = "starsector.named"
+            artifactId = "mappings-${mappingPlatform.get()}"
+            version = "0.98a-RC8-SNAPSHOT"
+            artifact(fullMappingFile.get()) {
+                extension = "tiny"
+                builtBy(tasks.named("generateFullMappings"))
+            }
+        }
+
+        // mapping 工具构件（JarRemapCli / BytecodeRemapper 等），供 SDG 以工具依赖消费
+        create<MavenPublication>("mappingTool") {
+            groupId = "io.github.nanoforged"
+            artifactId = "sourcesector-mapping"
+            version = "0.1.0-SNAPSHOT"
+            from(components["java"])
+        }
     }
     repositories {
         maven {
@@ -331,6 +350,12 @@ publishing {
             url = namedGameRepoDir.get().toURI()
         }
     }
+}
+
+tasks.register("publishMappings") {
+    group = "mapping"
+    description = "Publish full tiny mapping table to local repo build/named-game-repo/{platform}"
+    dependsOn("publishFullMappingsPublicationToNamedGameRepoRepository")
 }
 
 tasks.register("publishNamedGameJars") {
