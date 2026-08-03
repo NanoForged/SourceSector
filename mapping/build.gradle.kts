@@ -369,3 +369,56 @@ tasks.register("publishNamedGameJars") {
         dependsOn("publish${publicationTaskName}PublicationToNamedGameRepoRepository")
     }
 }
+
+/**
+ * 把 named 游戏 jar 安装进游戏目录（obf jar → mapping → named jar → 游戏目录）。
+ *
+ * 安装目标目录由 -Pstarsector.gameDir 指定（沿用 remapGameClasspathToNamed 的属性约定，
+ * 无 starsector-core 子目录时按游戏根目录处理）。首次覆盖前把游戏目录原 jar 备份为
+ * <name>.jar.obf-backup，备份已存在则跳过（不重复覆盖备份）；备份失败/游戏目录缺目标
+ * jar/named 产物缺失均直接报错失败，不做任何兜底。
+ *
+ * 依赖 publishNamedGameJars 链路（其内已含 verifyNamedJarLinks 门禁），保证只有通过
+ * 成员链接校验的 named jar 才允许进入游戏目录。安装是副作用操作，不做增量跳过：
+ * 每次执行都重新做备份判定并覆盖安装。
+ */
+tasks.register("installNamedGameJars") {
+    group = "mapping"
+    description = "Install named game jars into the game directory (backup originals as *.jar.obf-backup first)"
+    dependsOn("publishNamedGameJars")
+
+    val gameDirPath = providers.gradleProperty("starsector.gameDir")
+        .orNull?.takeIf { it.isNotBlank() }
+    inputs.dir(namedGameJarsDir)
+    // 安装目标是游戏目录（工作区外），只声明 named 产物为输入；不做输出增量判定。
+    outputs.upToDateWhen { false }
+
+    doLast {
+        val targetRoot = gameDirPath?.let { resolveGameJarDirectory(it) }
+            ?: throw GradleException("用法: ./gradlew :mapping:installNamedGameJars -Pstarsector.gameDir=<游戏目录>")
+        require(targetRoot.isDirectory) {
+            "游戏目录不存在: $targetRoot"
+        }
+        val namedJarRoot = namedGameJarsDir.get()
+        gameJarBaseNames.forEach { baseName ->
+            val targetJar = targetRoot.resolve("$baseName.jar")
+            require(targetJar.isFile) {
+                "游戏目录缺少目标 jar: $targetJar — 请确认游戏目录是完整 Starsector 安装（含 $baseName.jar）"
+            }
+            val backupFile = targetRoot.resolve("$baseName.jar.obf-backup")
+            if (backupFile.isFile) {
+                logger.lifecycle("[installNamedGameJars] 备份已存在，跳过备份: $backupFile")
+            } else {
+                targetJar.copyTo(backupFile)
+                logger.lifecycle("[installNamedGameJars] 已备份原 jar -> $backupFile")
+            }
+            val namedJar = namedJarRoot.resolve("$baseName.jar")
+            require(namedJar.isFile) {
+                "named jar 产物缺失: $namedJar — 请先运行 :mapping:remapGameClasspathToNamed 或检查链接校验门禁"
+            }
+            namedJar.copyTo(targetJar, overwrite = true)
+            logger.lifecycle("[installNamedGameJars] 已安装 named jar -> $targetJar")
+        }
+        logger.lifecycle("[installNamedGameJars] 安装完成。可用 NanoForge LaunchPrecheck（启动 precheck 的 named 判定门）复核安装结果。")
+    }
+}
