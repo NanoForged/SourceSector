@@ -27,12 +27,19 @@ SourceSector 已有同名字段，仅 desc 中的中间名类型更新
 
 ## 71 条 named 冲突分类（待逐案裁决）
 
-### A 类：SourceSector 保留混淆名/中间名，SSOptimizer 已翻译（应采纳 SSO 译名）
+### A 类：SourceSector 保留混淆名/中间名，SSOptimizer 已翻译（~~应采纳 SSO 译名~~ → 已裁决，SSO 错译）
 
 | 键 | SSO named | SS named（现状） |
 |---|---|---|
-| campaign/ui/MarketConditionsWidget#oöøO00 Color (linux) | baseColor | oöøO00（未翻译） |
-| campaign/ui/MarketConditionsWidget#super.null$for Color (windows) | baseColor | super.null$for（中间名） |
+| campaign/ui/MarketConditionsWidget#oöøO00 Color (linux) | baseColor（错译） | oöøO00（未翻译） |
+| campaign/ui/MarketConditionsWidget#super.null$for Color (windows) | baseColor（错译） | super.null$for（中间名） |
+
+**已裁决（2026-08-04，javap 取证）**：`getBaseColor()` 返回的是另一字段（obf `ÕöøO00`，已正确命名 baseColor）；
+该字段为 `private final Color`，仅在构造器由第 4 个 Color 参数赋值后**从不读取**（死字段）。
+SSO 的 baseColor 译名为一名多赋的错译。两仓统一采纳 `unusedColor`，已回填 scope 并重装 named jar。
+
+注：scope 数据残留统计（77194 条目）：成员级未翻译仅 6 条（0.008%），类级中间名残留 27 条
+（多为 misc-unscoped 的匿名内部类与低价值工具类），全量表语义覆盖率 99.7%。
 
 ### B 类：SSOptimizer 一名多赋（粗猜），SourceSector 区分更细（应保留 SS）
 
@@ -60,6 +67,6 @@ SS 区分为 height / cutInset / unusedPadding / color / fontScale / width —�
 
 ## 跟踪
 
-- [ ] A 类 2 条：采纳 SSO 译名回填 SourceSector。
+- [x] A 类 2 条：javap 取证裁决，SSO 错译，统一命名 unusedColor（已回填并重装）。
 - [ ] B 类：确认 SS 现状保留（无需动作，复核后勾销）。
 - [ ] C 类：javap 取证逐案裁决。
