@@ -7,6 +7,7 @@ c	com/fs/starfarer/campaign/ui/marketinfo/MarketInfoPanel$2	com/fs/starfarer/cam
 	m	compare	compare	(Ljava/lang/Object;Ljava/lang/Object;)I
 	f	this$0	this$0	Lcom/fs/starfarer/campaign/ui/marketinfo/MarketInfoPanel;
 	m	super	compareByMax	(Lcom/fs/starfarer/campaign/ui/marketinfo/OoO0;Lcom/fs/starfarer/campaign/ui/marketinfo/OoO0;)I
+	m	super	compareByMax	(Lcom/fs/starfarer/campaign/ui/marketinfo/C_9f8f94dd;Lcom/fs/starfarer/campaign/ui/marketinfo/C_9f8f94dd;)I
 c	com/fs/starfarer/campaign/ui/marketinfo/NearbyMarketDialog	com/fs/starfarer/campaign/ui/marketinfo/NearbyMarketDialog
 	m	actionPerformed	actionPerformed	(Ljava/lang/Object;Ljava/lang/Object;)V
 	m	advanceImpl	advanceImpl	(F)V
@@ -200,6 +201,7 @@ c	com/fs/starfarer/campaign/ui/marketinfo/Z	com/fs/starfarer/campaign/ui/marketi
 	f	ÓôØO00	gridUIColor	Ljava/awt/Color;
 	f	ÕõØO00	commodityRow	Lcom/fs/starfarer/campaign/ui/marketinfo/OoO0;
 	m	o00000	addTextTooltip	(Lcom/fs/starfarer/ui/UIComponentBase;Ljava/lang/String;[Ljava/lang/String;)V
+	f	ÕõØO00	commodityRow	Lcom/fs/starfarer/campaign/ui/marketinfo/C_9f8f94dd;
 c	com/fs/starfarer/campaign/ui/marketinfo/Z$o	com/fs/starfarer/campaign/ui/marketinfo/TradeDirection
 	f	new	IMPORT	Lcom/fs/starfarer/campaign/ui/marketinfo/TradeDirection;
 	f	Ó00000	EXPORT	Lcom/fs/starfarer/campaign/ui/marketinfo/TradeDirection;
@@ -259,6 +261,7 @@ c	com/fs/starfarer/campaign/ui/marketinfo/PlanetSurveyPanel	com/fs/starfarer/cam
 	m	new	establishColony	(Ljava/lang/String;Z)V
 	m	ÓÓO000	shouldShowFactionConfigDialog	()Z
 	m	$SWITCH_TABLE$com$fs$starfarer$campaign$ui$marketinfo$PlanetSurveyPanel$DialogType	getDialogTypeSwitchTable	()[I
+	f	õ0ØO00	availableResourcesPanel	Lcom/fs/starfarer/campaign/ui/marketinfo/C_d09889a8;
 c	com/fs/starfarer/campaign/ui/marketinfo/PlanetSurveyPanel$1	com/fs/starfarer/campaign/ui/marketinfo/PlanetSurveyPanel$SurveyResourceCostColorGetter
 	m	getColorFor	getColorFor	(Ljava/lang/String;Lcom/fs/starfarer/api/campaign/CargoAPI;)Ljava/awt/Color;
 	f	this$0	outer	Lcom/fs/starfarer/campaign/ui/marketinfo/PlanetSurveyPanel;
@@ -620,6 +623,7 @@ c	com/fs/starfarer/campaign/ui/marketinfo/intsuper	com/fs/starfarer/campaign/ui/
 	f	ÖõØO00	shippingPanel	Lcom/fs/starfarer/campaign/ui/marketinfo/ShippingPanel;
 	f	øõØO00	incomePanel	LEconomyPanel;
 	f	ôõØO00	accessibilityPanel	Lcom/fs/starfarer/campaign/ui/marketinfo/H;
+	f	ôõØO00	accessibilityPanel	Lcom/fs/starfarer/campaign/ui/marketinfo/C_e82795b1;
 c	com/fs/starfarer/campaign/ui/marketinfo/ifsuper	com/fs/starfarer/campaign/ui/marketinfo/LabelButton
 	m	advanceImpl	advanceImpl	(F)V
 	m	wrap	wrap	(Lcom/fs/starfarer/ui/d;)Lcom/fs/starfarer/ui/n;

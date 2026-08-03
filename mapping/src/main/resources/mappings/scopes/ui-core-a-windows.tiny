@@ -674,6 +674,7 @@ c	com/fs/starfarer/ui/g	com/fs/starfarer/ui/ScrollPanelImpl
 	m	ÓõO000	getVerticalRailPos	()Lcom/fs/starfarer/ui/PositionImpl;
 	m	null.public	getHorizontalThumbPos	()Lcom/fs/starfarer/ui/PositionImpl;
 	m	ÔõO000	getHorizontalRailPos	()Lcom/fs/starfarer/ui/PositionImpl;
+	f	super.super$public	contentContainer	Lcom/fs/starfarer/ui/C_2935f9d2;
 c	com/fs/starfarer/ui/g$1	com/fs/starfarer/ui/ScrollPanelImpl$ScrollbarThumb
 	f	this$0	scrollPanel	Lcom/fs/starfarer/ui/ScrollPanelImpl;
 c	com/fs/starfarer/ui/g$oo	com/fs/starfarer/ui/ScrollPanelImpl$DidNotRenderListener

@@ -320,6 +320,7 @@ c	com/fs/starfarer/campaign/ui/marketinfo/o	MarketInfoDetailView
 	f	ôÕöO00	width	F
 	f	ÓÖöO00	commodityNameLabel	Lcom/fs/starfarer/ui/LabelImpl;
 	f	if.while$float	commoditySubtitleLabel	Lcom/fs/starfarer/ui/LabelImpl;
+	f	ÕÖöO00	commodityRow	Lcom/fs/starfarer/campaign/ui/marketinfo/C_9f8f94dd;
 c	com/fs/starfarer/campaign/ui/marketinfo/o0O0	IllegalGoodsPanel
 	f	ÖÕöO00	market	Lcom/fs/starfarer/api/campaign/econ/MarketAPI;
 	f	ÕÕöO00	tabs	LMarketInfoTabs;

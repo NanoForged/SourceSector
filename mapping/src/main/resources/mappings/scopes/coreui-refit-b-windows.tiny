@@ -302,6 +302,7 @@ c	com/fs/starfarer/coreui/refit/auto/null	com/fs/starfarer/coreui/refit/FleetCom
 	f	do.this$int	labelLabel	Lcom/fs/starfarer/ui/LabelImpl;
 	f	private.this$int	valueLabel	Lcom/fs/starfarer/ui/LabelImpl;
 	f	ÓõÔO00	unusedGlowRow	Lcom/fs/starfarer/campaign/ui/marketinfo/L;
+	f	ÓõÔO00	unusedGlowRow	Lcom/fs/starfarer/campaign/ui/marketinfo/C_a3ec9aa0;
 c	com/fs/starfarer/coreui/refit/auto/SavedVariantData$1	com/fs/starfarer/coreui/refit/SavedVariantData$VariantComparator
 	m	o00000	compareVariants	(Lcom/fs/starfarer/loading/specs/HullVariantSpec;Lcom/fs/starfarer/loading/specs/HullVariantSpec;)I
 	m	compare	compare	(Ljava/lang/Object;Ljava/lang/Object;)I
