@@ -97,7 +97,8 @@ dependencies {
     // Starsector 0.98a-RC8 运行时 classpath 上的第三方库（用于 remap 时的类层次解析）
     gameClasspath("org.lwjgl.lwjgl:lwjgl:2.9.3")
     gameClasspath("org.lwjgl.lwjgl:lwjgl_util:2.9.3")
-    gameClasspath("com.thoughtworks.xstream:xstream:1.4.10")
+    // xstream 无 Maven 坐标：游戏运行时为 miko 补丁版（FieldAliasingMapper 签名与原版不同），vendor 对齐
+    gameClasspath(files(rootProject.file("game-jars/third-party/xstream-1.4.21_miko.jar")))
     gameClasspath("org.codehaus.janino:janino:2.7.8")
     gameClasspath("org.codehaus.janino:commons-compiler:2.7.8")
     gameClasspath("org.codehaus.janino:commons-compiler-jdk:2.7.8")
