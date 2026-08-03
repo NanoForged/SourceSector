@@ -28,13 +28,26 @@ val namedGameRepoDir = mappingPlatform.map { platform ->
 }
 /**
  * 游戏本体 jar 基名（vendored obf jar，remap 后进入 named 命名空间）。
- * 第三方 jar remap 时原样透传，不进入本地仓库，app 仍按文件依赖消费。
+ * 第三方 jar remap 时原样透传，经 passthroughGameJars 扫描后以 group starsector.game
+ * 发布进 named repo，供下游（SDG）按 Maven 坐标消费。
  */
 val gameJarBaseNames = listOf("starfarer_obf", "starfarer.api", "fs.common_obf", "fs.sound_obf")
+
+/** named 构件统一版本（SNAPSHOT + app 端 cacheChangingModulesFor(0)：mapping 变更重发布后 IDE 同步即取新 jar）。 */
+val namedGameVersion = "0.98a-RC8-SNAPSHOT"
 
 /** 发布物名称（Gradle 任务名片段）：starfarer_obf → namedStarfarerObf。 */
 fun namedGamePublicationName(baseName: String): String =
     "named" + baseName.split('.', '_').joinToString("") { part ->
+        part.replaceFirstChar { it.uppercase() }
+    }
+
+/**
+ * 透传第三方 jar 的发布物名称（Gradle 任务名片段）：
+ * xstream-1.4.21_miko → thirdPartyXstream1421Miko（artifactId 内 . _ - 均作单词分隔）。
+ */
+fun thirdPartyPublicationName(artifactId: String): String =
+    "thirdParty" + artifactId.split('.', '_', '-').joinToString("") { part ->
         part.replaceFirstChar { it.uppercase() }
     }
 
@@ -304,6 +317,25 @@ tasks.register("decompileNamedGameJars") {
     }
 }
 
+/**
+ * 透传第三方 jar 发布清单——配置期扫描 remap 产物目录生成，不硬编码：
+ * 取 named-game-jars/{platform}/ 下全部 *.jar，排除 4 个 named 主 jar 与 -sources.jar，
+ * 剩余均为透传 jar（本地游戏目录 / CI gameClasspath 两来源在 remap 时原样落盘，文件名保留版本段）。
+ * 目录尚未生成（首次构建）时清单为空，对应 publication 与发布任务均不注册。
+ */
+val passthroughGameJars: List<File> = namedGameJarsDir.get().let { dir ->
+    if (!dir.isDirectory) {
+        logger.lifecycle("[publishNamedGameJars] named 产物目录不存在，透传 jar 发布清单为空: $dir（先运行 :mapping:remapGameClasspathToNamed）")
+        emptyList()
+    } else {
+        fileTree(dir) {
+            include("*.jar")
+            exclude(gameJarBaseNames.map { "$it.jar" })
+            exclude("*-sources.jar")
+        }.files.sortedBy { it.name }
+    }
+}
+
 publishing {
     publications {
         gameJarBaseNames.forEach { baseName ->
@@ -311,7 +343,7 @@ publishing {
                 groupId = "starsector.named"
                 artifactId = baseName
                 // SNAPSHOT + app 端 cacheChangingModulesFor(0)：mapping 变更重发布后 IDE 同步即取新 jar
-                version = "0.98a-RC8-SNAPSHOT"
+                version = namedGameVersion
                 val platformId = mappingPlatform.get()
                 artifact(rootProject.layout.buildDirectory
                     .file("named-game-jars/$platformId/$baseName.jar").get().asFile) {
@@ -325,11 +357,25 @@ publishing {
             }
         }
 
+        // 透传第三方 jar：group 归属 starsector.game（SDG 扫描该 group 自动挂 compileOnly），
+        // artifactId 取 jar 文件名去 .jar（保留版本段，如 xstream-1.4.21_miko），version 与主 jar 一致。
+        passthroughGameJars.forEach { jar ->
+            val passthroughArtifactId = jar.name.removeSuffix(".jar")
+            create<MavenPublication>(thirdPartyPublicationName(passthroughArtifactId)) {
+                groupId = "starsector.game"
+                artifactId = passthroughArtifactId
+                version = namedGameVersion
+                artifact(jar) {
+                    builtBy(tasks.named("remapGameClasspathToNamed"))
+                }
+            }
+        }
+
         // 全量 tiny 表构件（SDG reobfJar 等构建侧 remap 消费的映射源）
         create<MavenPublication>("fullMappings") {
             groupId = "starsector.named"
             artifactId = "mappings-${mappingPlatform.get()}"
-            version = "0.98a-RC8-SNAPSHOT"
+            version = namedGameVersion
             artifact(fullMappingFile.get()) {
                 extension = "tiny"
                 builtBy(tasks.named("generateFullMappings"))
@@ -360,11 +406,17 @@ tasks.register("publishMappings") {
 
 tasks.register("publishNamedGameJars") {
     group = "mapping"
-    description = "Publish named game jars + decompiled sources to local repo build/named-game-repo/{platform}"
+    description = "Publish named game jars + decompiled sources + passthrough third-party jars to local repo build/named-game-repo/{platform}"
     // 链接校验门禁：named 产物成员链接断裂（继承链名字分叉）时发布直接失败。
     dependsOn("verifyNamedJarLinks")
     gameJarBaseNames.forEach { baseName ->
         val publicationTaskName = namedGamePublicationName(baseName)
+            .replaceFirstChar { it.uppercase() }
+        dependsOn("publish${publicationTaskName}PublicationToNamedGameRepoRepository")
+    }
+    // 透传第三方 jar 随 4 主 jar 一并发布进 named repo（清单为空时无对应任务，跳过）。
+    passthroughGameJars.forEach { jar ->
+        val publicationTaskName = thirdPartyPublicationName(jar.name.removeSuffix(".jar"))
             .replaceFirstChar { it.uppercase() }
         dependsOn("publish${publicationTaskName}PublicationToNamedGameRepoRepository")
     }
