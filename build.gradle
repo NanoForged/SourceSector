@@ -1,0 +1,50 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.gradleup.shadow' version '9.4.3'
+    id 'maven-publish'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+group = "io.github.nanoforged"
+version = "0.1.0-SNAPSHOT"
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://maven.aliyun.com/repository/public/"
+    }
+    maven {
+        url "https://maven.aliyun.com/repository/central"
+    }
+
+}
+
+
+application {
+    mainClass = 'io.github.nanoforged.sourcesector.SourceSector'
+}
+
+dependencies {
+    implementation(libs.bundles.asm.all)
+    implementation(libs.mapping.io)
+    implementation(libs.picocli)
+
+    testImplementation platform('org.junit:junit-bom:5.13.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.13.0'
+
+}
+
+test {
+    useJUnitPlatform()
+}
+
+
+
+

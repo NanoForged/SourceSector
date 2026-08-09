@@ -1,0 +1,26 @@
+[versions]
+asm = "9.10.1"
+mapping-io = "0.8.0"
+picocli = "4.7.7"
+
+
+
+[libraries]
+asm-core = { group = "org.ow2.asm", name = "asm", version.ref = "asm" }
+asm-tree = { group = "org.ow2.asm", name = "asm-tree", version.ref = "asm" }
+asm-commons = { group = "org.ow2.asm", name = "asm-commons", version.ref = "asm" }
+asm-util = { group = "org.ow2.asm", name = "asm-util", version.ref = "asm" }
+asm-analysis = { group = "org.ow2.asm", name = "asm-analysis", version.ref = "asm" }
+
+mapping-io = { group = "net.fabricmc", name = "mapping-io", version.ref = "mapping-io" }
+picocli = { group = "info.picocli", name = "picocli", version.ref = "picocli" }
+
+[bundles]
+
+asm-all = [
+    "asm-core",
+    "asm-tree",
+    "asm-commons",
+    "asm-util",
+    "asm-analysis"
+]

@@ -1,3 +1,0 @@
-tiny	2	0	obf	named
-c	com/fs/starfarer/campaign/econ/Market	com/fs/starfarer/campaign/econ/Market
-	f	id	marketId	Ljava/lang/String;
