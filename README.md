@@ -81,6 +81,59 @@ java -jar build/libs/sourcesector-all.jar enigma \
 
 The output is written in deterministic (name-sorted) order, so identical input folders always produce byte-identical files. Exits `2` if the folder contains no mappings.
 
+## Programmatic API (Gradle build scripts)
+
+All command logic is exposed as a UI-free Java facade — `io.github.nanoforged.sourcesector.api.MappingApi` — callable directly from a Gradle build script (`doLast`, `JavaExec`, custom `Task`) without picocli. Invalid arguments throw `IllegalArgumentException`; I/O failures throw `IOException`.
+
+```groovy
+// build.gradle
+import io.github.nanoforged.sourcesector.api.MappingApi
+
+tasks.register('convertEnigma') {
+    doLast {
+        MappingApi.EnigmaResult r = MappingApi.enigma(
+            project.file('mappings'),        // Enigma 目录
+            project.file('build/mappings.tiny'))
+        println "converted ${r.classes()} classes -> ${r.output}"
+    }
+}
+
+tasks.register('generateIntermediary') {
+    doLast {
+        MappingApi.GenerateResult r = MappingApi.generate(
+            project.files('build/game.jar').files as List,
+            project.files('libs/game-core.jar').files as List,
+            'com/fs',
+            project.file('build/intermediary.tiny'),
+            null)                            // null = 派生 <output>.readable
+        println "mapped ${r.mappedClasses()} classes, ${r.mappedMethods()} methods"
+    }
+}
+
+tasks.register('mergeLayers') {
+    doLast {
+        MappingApi.MergeResult r = MappingApi.layermapping(
+            project.file('base.tiny'),
+            project.file('overlay.tiny'),
+            project.file('build/merged.tiny'))
+        println "merged ${r.classes()} classes -> ${r.output}"
+    }
+}
+
+tasks.register('checkPairing') {
+    doLast {
+        MappingApi.VerifyResult r = MappingApi.verify(
+            project.file('intermediary.tiny'),
+            project.file('named.tiny'))
+        if (!r.passed()) {
+            throw new GradleException("Pairing broken: " + r.violations())
+        }
+    }
+}
+```
+
+Helper methods `jarInputs(jars, dirs)` / `jarLibraries(jars, dirs)` expand jar directories in sorted order and `normalizePrefix("com.fs") → "com/fs"`, matching the CLI validation rules.
+
 ## How naming works
 
 - Classes are named `class_0`, `class_1`, …; fields `field_0`, …; methods `method_0`, … — each with its own global counter (Fabric Intermediary convention, globally unique).
