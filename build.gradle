@@ -12,7 +12,7 @@ java {
 }
 
 group = "io.github.nanoforged"
-version = "0.1.0-SNAPSHOT"
+version = "1.0.0"
 
 repositories {
     mavenCentral()
@@ -22,9 +22,7 @@ repositories {
     maven {
         url "https://maven.aliyun.com/repository/central"
     }
-
 }
-
 
 application {
     mainClass = 'io.github.nanoforged.sourcesector.SourceSector'
@@ -38,13 +36,29 @@ dependencies {
     testImplementation platform('org.junit:junit-bom:5.13.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.13.0'
-
 }
 
 test {
     useJUnitPlatform()
 }
 
-
-
-
+publishing {
+    publications {
+        create('mavenJava', MavenPublication) {
+            from components.java
+            pom {
+                name = 'SourceSector'
+                url = 'https://github.com/nanoforged/SourceSector'
+                developers {
+                    developer {
+                        id = 'nanoforged'}
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/nanoforged/SourceSector.git'
+                    developerConnection = 'scm:git:ssh://github.com/nanoforged/SourceSector.git'
+                    url = 'https://github.com/nanoforged/SourceSector'
+                }
+            }
+        }
+    }
+}
