@@ -11,6 +11,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -41,8 +42,9 @@ class MappingGeneratorTest {
 
         assertEquals("method_0", memberEntry(entries, "a/A", "foo").intermediaryName());
         assertEquals("method_0", memberEntry(entries, "b/B", "foo").intermediaryName());
-        // 签名族归并：b/B.baz 与祖先 a/A.foo 同签名 ()V，归入同一 method_0。
-        assertEquals("method_0", memberEntry(entries, "b/B", "baz").intermediaryName());
+        // b/B 类内 ()V 出现两次（foo+baz），desc 归并被门控阻断：
+        // baz 是独立方法，独立编号，不再吸附到祖先 method_0。
+        assertEquals("method_1", memberEntry(entries, "b/B", "baz").intermediaryName());
     }
 
     @Test
@@ -197,6 +199,60 @@ class MappingGeneratorTest {
 
         assertTrue(entries.stream().noneMatch(e -> "missing/Missing".equals(e.obfuscatedName())));
         assertEquals("class_0", classEntry(entries, "x/X").intermediaryName());
+    }
+
+    @Test
+    void sameDescriptorMultipleMethodsInOwnerStayIndependent() {
+        // UITable 回归微缩：父类 1 个 ()Z；子类 8 个不同名的独立 ()Z。
+        // 类内 ()Z 不唯一 → desc 归并门控阻断 → 8 条 entry 中间名互异且均不等于祖先 method_0。
+        ClassStructure.Member z1 = method("m1", "()Z");
+        ClassStructure.Member z2 = method("m2", "()Z");
+        ClassStructure.Member z3 = method("m3", "()Z");
+        ClassStructure.Member z4 = method("m4", "()Z");
+        ClassStructure.Member z5 = method("m5", "()Z");
+        ClassStructure.Member z6 = method("m6", "()Z");
+        ClassStructure.Member z7 = method("m7", "()Z");
+        ClassStructure.Member z8 = method("m8", "()Z");
+        List<MappingEntry> entries = generate(prefix(null),
+                cs("p/P", null, List.of(), List.of(method("z", "()Z"))),
+                cs("c/C", "p/P", List.of(),
+                        List.of(z1, z2, z3, z4, z5, z6, z7, z8)));
+
+        assertEquals("method_0", memberEntry(entries, "p/P", "z").intermediaryName());
+        List<String> childNames = new java.util.ArrayList<>();
+        for (int i = 1; i <= 8; i++) {
+            String name = memberEntry(entries, "c/C", "m" + i).intermediaryName();
+            assertFalse("method_0".equals(name), "c/C.m" + i + " 不得复用祖先 method_0");
+            childNames.add(name);
+        }
+        assertEquals(8, childNames.stream().distinct().count(), "类内 ()Z 各方法中间名必须互异");
+    }
+
+    @Test
+    void renamedVirtualMethodStillConvergesAcrossGenerations() {
+        // processInput 场景保真：a/A.foo()V 覆写为 b/B.foo()V，再跨代改名 c/C.m()V。
+        // 每代类内 ()V 唯一 → desc 归并照常启用 → 三代收敛为同一 method_0。
+        List<MappingEntry> entries = generate(prefix(null),
+                cs("a/A", null, List.of(), List.of(method("foo", "()V"))),
+                cs("b/B", "a/A", List.of(), List.of(method("foo", "()V"))),
+                cs("c/C", "b/B", List.of(), List.of(method("m", "()V"))));
+
+        assertEquals("method_0", memberEntry(entries, "a/A", "foo").intermediaryName());
+        assertEquals("method_0", memberEntry(entries, "b/B", "foo").intermediaryName());
+        assertEquals("method_0", memberEntry(entries, "c/C", "m").intermediaryName());
+    }
+
+    @Test
+    void descendantUniqueDescriptorMergesIntoAncestorFirstMatch() {
+        // 父类两个 ()V（p/q）；子类单个 r()V（类内 ()V 唯一）→ desc 归并启用，
+        // 命中祖先声明序第一个同 desc 方法 p 的 method_0。
+        List<MappingEntry> entries = generate(prefix(null),
+                cs("p/P", null, List.of(), List.of(method("p", "()V"), method("q", "()V"))),
+                cs("c/C", "p/P", List.of(), List.of(method("r", "()V"))));
+
+        assertEquals("method_0", memberEntry(entries, "p/P", "p").intermediaryName());
+        assertEquals("method_1", memberEntry(entries, "p/P", "q").intermediaryName());
+        assertEquals("method_0", memberEntry(entries, "c/C", "r").intermediaryName());
     }
 
     // ---- 辅助 ----

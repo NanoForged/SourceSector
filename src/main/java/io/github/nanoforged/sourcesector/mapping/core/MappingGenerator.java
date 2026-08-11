@@ -19,8 +19,9 @@ import java.util.Objects;
  * 继承正确性：拓扑序保证父先于子，覆盖方法从祖先映射直接复用同一中间名。
  * 复用裁决遵循 JVM 方法解析优先级：{@code superclass} 链（近→远）精确命中
  * 【源名+描述符】优先，其次按描述符在 superclass 链内归并（处理混淆器对
- * 同一虚方法改名的场景），最后接口闭包按声明序取第一个精确命中；同签名在
- * 一棵继承树内收敛为同一个 {@code method_N}，无需后续全局冲突解决步骤。
+ * 同一虚方法改名的场景；仅当当前类内该描述符唯一时启用）；最后接口闭包按
+ * 声明序取第一个精确命中；同签名在一棵继承树内收敛为同一个 {@code method_N}，
+ * 无需后续全局冲突解决步骤。
  * 库类与 phantom 桩不生成任何条目。
  * 构造方法与静态初始化块（{@code <init>}/{@code <clinit>}）不映射。
  * <p>
@@ -90,12 +91,14 @@ public final class MappingGenerator {
                     obfuscatedName, intermediateName, field.name(), fieldName, readableName, field.desc()));
         }
 
+        Map<String, Integer> descriptorCounts = countDescriptors(structure);
         for (ClassStructure.Member method : structure.methods()) {
             if (isConstructor(method)) {
                 continue;
             }
             String key = memberKey(method);
-            String reusedName = reusableMethodName(obfuscatedName, key, method.desc());
+            boolean descriptorMergeEligible = descriptorCounts.getOrDefault(method.desc(), 0) == 1;
+            String reusedName = reusableMethodName(obfuscatedName, key, method.desc(), descriptorMergeEligible);
             String methodName = reusedName != null ? reusedName : "method_" + methodCounter++;
             String readableName = heuristics.isReadableMemberName(method.name()) ? method.name() : null;
             MappingEntry entry = MappingEntry.methodEntry(
@@ -110,7 +113,8 @@ public final class MappingGenerator {
      * <p>
      * 优先级：1) {@code superclass} 链按精确 {@code name:desc}（近→远）；
      * 2) {@code superclass} 链按描述符匹配（签名族归并，处理同一虚方法在
-     * 不同类混淆名不一致的情况，如 {@code processInput} vs {@code super}）；
+     * 不同类混淆名不一致的情况，如 {@code processInput} vs {@code super}；仅当
+     * 当前类内该描述符唯一时启用，避免把类内多个独立同签名方法吸附到同一中间名）；
      * 3) 接口闭包按精确 {@code name:desc}，取声明序第一个命中。
      * <p>
      * 拓扑序保证祖先已处理完毕。命中即返回最近祖先的第一个匹配，
@@ -119,19 +123,22 @@ public final class MappingGenerator {
      * @param owner 当前类内部名
      * @param key   {@code name:desc}
      * @param desc  方法描述符
+     * @param descriptorMergeEligible 当前类内该描述符是否唯一（唯一才允许按描述符归并）
      * @return 复用的中间名；无匹配返回 {@code null}
      */
-    private String reusableMethodName(String owner, String key, String desc) {
+    private String reusableMethodName(String owner, String key, String desc, boolean descriptorMergeEligible) {
         for (String ancestor : graph.superChainOf(owner)) {
             String match = methodNameByKey(ancestor, key);
             if (match != null) {
                 return match;
             }
         }
-        for (String ancestor : graph.superChainOf(owner)) {
-            String match = methodNameByDescriptor(ancestor, desc);
-            if (match != null) {
-                return match;
+        if (descriptorMergeEligible) {
+            for (String ancestor : graph.superChainOf(owner)) {
+                String match = methodNameByDescriptor(ancestor, desc);
+                if (match != null) {
+                    return match;
+                }
             }
         }
         for (String iface : graph.interfaceClosureOf(owner)) {
@@ -165,6 +172,18 @@ public final class MappingGenerator {
             }
         }
         return null;
+    }
+
+    /** 统计当前类内各方法描述符出现次数（跳过构造方法），供 desc 归并门控使用。 */
+    private static Map<String, Integer> countDescriptors(ClassStructure structure) {
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (ClassStructure.Member method : structure.methods()) {
+            if (isConstructor(method)) {
+                continue;
+            }
+            counts.merge(method.desc(), 1, Integer::sum);
+        }
+        return counts;
     }
 
     private static boolean isConstructor(ClassStructure.Member method) {

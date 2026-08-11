@@ -134,12 +134,15 @@ class MapperFacadeDeterminismTest {
         assertEquals(2, result.mappedFields());
         // 可读条目：类 Ship + update + render(c/C) + render(Ship) + speed = 5。
         assertEquals(5, result.readableCount());
-        // 唯一中间方法名 = 2（method_0..1）：场景中全部方法签名同为 ()V，
-        // superclass 链签名族归并使 aa/update/render/a 收敛到最近的祖先族。
+        // 唯一中间方法名 = 4（method_0..3）：
+        // 场景中各方法签名同为 ()V，但 b/B、c/C、Ship 类内 ()V 均不唯一，
+        // desc 归并门控阻断 → aa(b/B)=method_0、update=method_1、
+        // render(c/C)=method_2、a(Ship)=method_3；跨代精确覆写（b/B.aa、Ship.render）
+        // 通过①级 name:desc 精确命中仍收敛到祖先。
         List<String> methods = result.entries().stream()
                 .filter(MappingEntry::isMethod)
                 .map(MappingEntry::intermediaryName)
                 .toList();
-        assertEquals(2, methods.stream().distinct().count());
+        assertEquals(4, methods.stream().distinct().count());
     }
 }
