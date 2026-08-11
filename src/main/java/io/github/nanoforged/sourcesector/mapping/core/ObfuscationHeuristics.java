@@ -72,21 +72,31 @@ public final class ObfuscationHeuristics {
 
     /** 判定名字是否完全由字典词拼接而成（至少两个词，整体不在字典）。 */
     private static boolean isDictionaryWordComposition(String name) {
-        return canDecompose(name, 0, OBFUSCATOR_DICTIONARY_NAMES)
-                || canDecompose(name.toLowerCase(java.util.Locale.ROOT), 0,
+        return canDecompose(name, OBFUSCATOR_DICTIONARY_NAMES)
+                || canDecompose(name.toLowerCase(java.util.Locale.ROOT),
                         OBFUSCATOR_DICTIONARY_NAMES_LOWER);
     }
 
-    private static boolean canDecompose(String name, int from, Set<String> dictionary) {
-        if (from >= name.length()) {
-            return from > 0;
-        }
-        for (int end = name.length(); end > from; end--) {
-            if (dictionary.contains(name.substring(from, end)) && canDecompose(name, end, dictionary)) {
-                return true;
+    /**
+     * 判定名串能否被切分为若干字典词（Word-Break 判定）。
+     * <p>
+     * 动态规划，O(length²)：{@code dp[i]} 表示子串 {@code name[i..]} 可分解；
+     * 空后缀视为可分解（与原回溯"到达末尾即成功"语义一致）。
+     * 替代原先的指数级回溯实现（长名 + 字典词密集时最坏 O(2^n)）。
+     */
+    private static boolean canDecompose(String name, Set<String> dictionary) {
+        int length = name.length();
+        boolean[] dp = new boolean[length + 1];
+        dp[length] = length > 0;
+        for (int i = length - 1; i >= 0; i--) {
+            for (int end = length; end > i; end--) {
+                if (dictionary.contains(name.substring(i, end)) && dp[end]) {
+                    dp[i] = true;
+                    break;
+                }
             }
         }
-        return false;
+        return dp[0];
     }
 
     /**

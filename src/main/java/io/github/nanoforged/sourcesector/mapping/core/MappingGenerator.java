@@ -16,9 +16,12 @@ import java.util.Objects;
  * 每类各用独立全局计数器（Fabric Intermediary 惯例，名称全局唯一）；
  * 类名可选置于 {@code prefix} 包路径下（如 {@code com/example/out/class_0}）。
  * <p>
- * 继承正确性：拓扑序保证父先于子，覆盖方法（同源名+描述符）从祖先映射直接复用
- * 同一中间名；同一签名在多祖先映射到不同名（菱形接口）时取字典序最小者，
- * 无需后续全局冲突解决步骤。库类与 phantom 桩不生成任何条目。
+ * 继承正确性：拓扑序保证父先于子，覆盖方法从祖先映射直接复用同一中间名。
+ * 复用裁决遵循 JVM 方法解析优先级：{@code superclass} 链（近→远）精确命中
+ * 【源名+描述符】优先，其次按描述符在 superclass 链内归并（处理混淆器对
+ * 同一虚方法改名的场景），最后接口闭包按声明序取第一个精确命中；同签名在
+ * 一棵继承树内收敛为同一个 {@code method_N}，无需后续全局冲突解决步骤。
+ * 库类与 phantom 桩不生成任何条目。
  * 构造方法与静态初始化块（{@code <init>}/{@code <clinit>}）不映射。
  * <p>
  * 可读名回写：原始名通过 {@link ObfuscationHeuristics} 判定为未混淆（可读）时，
@@ -92,7 +95,7 @@ public final class MappingGenerator {
                 continue;
             }
             String key = memberKey(method);
-            String reusedName = reusableMethodName(obfuscatedName, key);
+            String reusedName = reusableMethodName(obfuscatedName, key, method.desc());
             String methodName = reusedName != null ? reusedName : "method_" + methodCounter++;
             String readableName = heuristics.isReadableMemberName(method.name()) ? method.name() : null;
             MappingEntry entry = MappingEntry.methodEntry(
@@ -103,27 +106,65 @@ public final class MappingGenerator {
     }
 
     /**
-     * 在祖先中查找同签名（源名+描述符）方法映射，取中间名最小者。
-     * 拓扑序保证祖先已处理完毕；菱形接口多候选时字典序最小即确定性裁决。
+     * 在祖先中寻找可复用的中间名，遵循 JVM 方法解析优先级。
+     * <p>
+     * 优先级：1) {@code superclass} 链按精确 {@code name:desc}（近→远）；
+     * 2) {@code superclass} 链按描述符匹配（签名族归并，处理同一虚方法在
+     * 不同类混淆名不一致的情况，如 {@code processInput} vs {@code super}）；
+     * 3) 接口闭包按精确 {@code name:desc}，取声明序第一个命中。
+     * <p>
+     * 拓扑序保证祖先已处理完毕。命中即返回最近祖先的第一个匹配，
+     * 不再采用字典序最小裁决（避免跨继承树误选）。
      *
      * @param owner 当前类内部名
      * @param key   {@code name:desc}
+     * @param desc  方法描述符
      * @return 复用的中间名；无匹配返回 {@code null}
      */
-    private String reusableMethodName(String owner, String key) {
-        String best = null;
-        for (String ancestor : graph.ancestorsOf(owner)) {
-            Map<String, MappingEntry> ancestorMethods = methodsByOwner.get(ancestor);
-            if (ancestorMethods == null) {
-                continue;
-            }
-            MappingEntry candidate = ancestorMethods.get(key);
-            if (candidate != null
-                    && (best == null || candidate.intermediaryName().compareTo(best) < 0)) {
-                best = candidate.intermediaryName();
+    private String reusableMethodName(String owner, String key, String desc) {
+        for (String ancestor : graph.superChainOf(owner)) {
+            String match = methodNameByKey(ancestor, key);
+            if (match != null) {
+                return match;
             }
         }
-        return best;
+        for (String ancestor : graph.superChainOf(owner)) {
+            String match = methodNameByDescriptor(ancestor, desc);
+            if (match != null) {
+                return match;
+            }
+        }
+        for (String iface : graph.interfaceClosureOf(owner)) {
+            String match = methodNameByKey(iface, key);
+            if (match != null) {
+                return match;
+            }
+        }
+        return null;
+    }
+
+    /** 在指定已映射类的方法索引中按精确 {@code name:desc} 查找。 */
+    private String methodNameByKey(String owner, String key) {
+        Map<String, MappingEntry> ownerMethods = methodsByOwner.get(owner);
+        if (ownerMethods == null) {
+            return null;
+        }
+        MappingEntry candidate = ownerMethods.get(key);
+        return candidate == null ? null : candidate.intermediaryName();
+    }
+
+    /** 在指定已映射类的方法索引中按描述符查找（签名族归并）。 */
+    private String methodNameByDescriptor(String owner, String desc) {
+        Map<String, MappingEntry> ownerMethods = methodsByOwner.get(owner);
+        if (ownerMethods == null) {
+            return null;
+        }
+        for (MappingEntry entry : ownerMethods.values()) {
+            if (desc.equals(entry.descriptor())) {
+                return entry.intermediaryName();
+            }
+        }
+        return null;
     }
 
     private static boolean isConstructor(ClassStructure.Member method) {

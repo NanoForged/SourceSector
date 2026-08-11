@@ -116,6 +116,66 @@ public final class ClassHierarchyGraph {
     }
 
     /**
+     * 返回沿 {@code superName} 单值链的直系超类序列（近→远），排除自身。
+     * <p>
+     * 遵循 JVM 方法覆写解析顺序：实现类优先从最近超类继承方法，superclass 链的
+     * 命中优先级应高于接口。遇缺失父类（phantom 桩）或 {@code java/lang/Object}
+     * 即终止。仅代表类文件 {@code super_name} 的单一链，不含接口。
+     *
+     * @param internalName 节点内部名
+     * @return 超类链内部名列表（近→远）
+     */
+    public List<String> superChainOf(String internalName) {
+        Set<String> visited = new LinkedHashSet<>();
+        visited.add(internalName);
+        List<String> chain = new ArrayList<>();
+        String current = internalName;
+        while (true) {
+            ClassStructure structure = structureOf(current);
+            if (structure == null || structure.superName() == null) {
+                break;
+            }
+            String superName = structure.superName();
+            if ("java/lang/Object".equals(superName) || !visited.add(superName)) {
+                break;
+            }
+            chain.add(superName);
+            current = superName;
+        }
+        return List.copyOf(chain);
+    }
+
+    /**
+     * 返回接口闭包：直接接口 + 递归其父接口，按声明顺序深度优先去重。
+     * <p>
+     * 用于接口实现一致化：多个接口声明同签名方法时，取声明序第一个命中的
+     * 接口族（含其父接口）即确定性裁决，与 JVM 接口方法解析顺序一致。
+     * 遇缺失接口（phantom 桩）即停止该分支的递归。
+     *
+     * @param internalName 节点内部名
+     * @return 接口闭包内部名列表（声明序深度优先）
+     */
+    public List<String> interfaceClosureOf(String internalName) {
+        LinkedHashSet<String> closure = new LinkedHashSet<>();
+        ClassStructure structure = structureOf(internalName);
+        if (structure != null) {
+            collectInterfaceClosure(structure.interfaces(), closure);
+        }
+        return List.copyOf(closure);
+    }
+
+    private void collectInterfaceClosure(List<String> interfaces, LinkedHashSet<String> closure) {
+        for (String iface : interfaces) {
+            if (closure.add(iface)) {
+                ClassStructure structure = structureOf(iface);
+                if (structure != null) {
+                    collectInterfaceClosure(structure.interfaces(), closure);
+                }
+            }
+        }
+    }
+
+    /**
      * 判定节点是否来自输入 jar（需要生成映射）。
      *
      * @param internalName 节点内部名

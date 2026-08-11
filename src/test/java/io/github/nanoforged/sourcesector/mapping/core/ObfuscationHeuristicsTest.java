@@ -75,6 +75,15 @@ class ObfuscationHeuristicsTest {
     }
 
     @Test
+    void longDictionaryConcatenationHandledInQuadraticTime() {
+        // 超长字典词拼接名：原回溯实现最坏会指数级展开，DP（Word-Break）保持 O(n²) 并正确判为不可读。
+        assertFalse(heuristics.isReadableMemberName("super".repeat(8)));
+        assertFalse(heuristics.isReadableMemberName("interfaceif".repeat(5)));
+        // 含非字典段的长名仍判为可读，不受拼接规则误伤。
+        assertTrue(heuristics.isReadableMemberName("super".repeat(4) + "Gear"));
+    }
+
+    @Test
     void classNameJudgedBySimpleName() {
         assertTrue(heuristics.isReadableClassName("com/example/MyShip"));
         assertTrue(heuristics.isReadableClassName("com/example/GameUI"));

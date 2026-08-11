@@ -134,11 +134,12 @@ class MapperFacadeDeterminismTest {
         assertEquals(2, result.mappedFields());
         // 可读条目：类 Ship + update + render(c/C) + render(Ship) + speed = 5。
         assertEquals(5, result.readableCount());
-        // 唯一中间方法名 = 4（method_0..3：aa 复用不新发编号）。
+        // 唯一中间方法名 = 2（method_0..1）：场景中全部方法签名同为 ()V，
+        // superclass 链签名族归并使 aa/update/render/a 收敛到最近的祖先族。
         List<String> methods = result.entries().stream()
                 .filter(MappingEntry::isMethod)
                 .map(MappingEntry::intermediaryName)
                 .toList();
-        assertEquals(4, methods.stream().distinct().count());
+        assertEquals(2, methods.stream().distinct().count());
     }
 }

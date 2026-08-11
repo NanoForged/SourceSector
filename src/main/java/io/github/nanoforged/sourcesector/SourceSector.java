@@ -23,7 +23,8 @@ import java.util.concurrent.Callable;
 
 @Command(name = "sourcesector",
         mixinStandardHelpOptions = true,
-        version = "0.1.0-SNAPSHOT",
+        // 与 build.gradle 的 project.version 保持一致（1.0.2）；发布 bump 时需同步二者。
+        version = "1.0.2",
         description = "Generate deterministic intermediary name mappings (Tiny v2, mapping-io read/write) for obfuscated jars",
         subcommands = {
             VerifyCommand.class,

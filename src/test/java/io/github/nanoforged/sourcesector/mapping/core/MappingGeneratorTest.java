@@ -41,7 +41,8 @@ class MappingGeneratorTest {
 
         assertEquals("method_0", memberEntry(entries, "a/A", "foo").intermediaryName());
         assertEquals("method_0", memberEntry(entries, "b/B", "foo").intermediaryName());
-        assertEquals("method_1", memberEntry(entries, "b/B", "baz").intermediaryName());
+        // 签名族归并：b/B.baz 与祖先 a/A.foo 同签名 ()V，归入同一 method_0。
+        assertEquals("method_0", memberEntry(entries, "b/B", "baz").intermediaryName());
     }
 
     @Test
@@ -55,16 +56,55 @@ class MappingGeneratorTest {
     }
 
     @Test
-    void diamondInterfacesPickLexicographicallySmallestTargetForSameSignature() {
+    void diamondInterfacesPickFirstDeclaredInterfaceTargetForSameSignature() {
         List<MappingEntry> entries = generate(prefix(null),
                 csWithIf("i/I1", null, List.of(), List.of(method("m", "()V"))),
                 csWithIf("i/I2", null, List.of(), List.of(method("m", "()V"))),
                 csWithIf("c/C", "java/lang/Object", List.of("i/I1", "i/I2"), List.of(method("m", "()V"))));
 
-        // 拓扑序：I1 先于 I2 → method_0 / method_1；C 复用字典序最小的 method_0。
+        // 拓扑序：I1 先于 I2 → method_0 / method_1；C 按接口声明序取第一个命中（I1）→ method_0。
         assertEquals("method_0", memberEntry(entries, "i/I1", "m").intermediaryName());
         assertEquals("method_1", memberEntry(entries, "i/I2", "m").intermediaryName());
         assertEquals("method_0", memberEntry(entries, "c/C", "m").intermediaryName());
+    }
+
+    @Test
+    void superClassWinsOverInterfaceForLexicographicallyLargerName() {
+        // 拓扑序：i/I 先于 s/S → i/I.foo=method_0、s/S.foo=method_1；
+        // c/C 同时继承 s/S 并实现 i/I，JVM 解析优先 superclass 链 → 复用 method_1，
+        // 而非旧裁决按字典序取更小的 method_0。
+        List<MappingEntry> entries = generate(prefix(null),
+                csWithIf("i/I", null, List.of(), List.of(method("foo", "()V"))),
+                cs("s/S", null, List.of(), List.of(method("foo", "()V"))),
+                csWithIf("c/C", "s/S", List.of("i/I"), List.of(method("foo", "()V"))));
+
+        assertEquals("method_0", memberEntry(entries, "i/I", "foo").intermediaryName());
+        assertEquals("method_1", memberEntry(entries, "s/S", "foo").intermediaryName());
+        assertEquals("method_1", memberEntry(entries, "c/C", "foo").intermediaryName());
+    }
+
+    @Test
+    void sameDescriptorDifferentObfNameReusesAncestorName() {
+        // 子类覆写祖先方法后混淆名被改名（bar vs foo），但签名同为 ()V：
+        // superclass 链签名族归并应让 b/B.bar 复用 a/A.foo 的 method_0。
+        List<MappingEntry> entries = generate(prefix(null),
+                cs("a/A", null, List.of(), List.of(method("foo", "()V"))),
+                cs("b/B", "a/A", List.of(), List.of(method("bar", "()V"))));
+
+        assertEquals("method_0", memberEntry(entries, "a/A", "foo").intermediaryName());
+        assertEquals("method_0", memberEntry(entries, "b/B", "bar").intermediaryName());
+    }
+
+    @Test
+    void unrelatedSameDescriptorStaysIndependent() {
+        // 两个无关类声明相同签名 ()V 的方法，无共同祖先：
+        // 签名族归并仅限祖先链内，不得跨树合并，各自独立编号。
+        List<MappingEntry> entries = generate(prefix(null),
+                cs("a/A", null, List.of(), List.of(method("foo", "()V"))),
+                cs("b/B", null, List.of(), List.of(method("qux", "()V"))));
+
+        assertEquals("method_0", memberEntry(entries, "a/A", "foo").intermediaryName());
+        assertEquals("method_1", memberEntry(entries, "b/B", "qux").intermediaryName());
     }
 
     @Test
