@@ -132,6 +132,43 @@ class ClassHierarchyGraphTest {
         assertEquals(List.of(), graph.interfaceClosureOf("i/I2"));
     }
 
+    @Test
+    void childrenOfReturnsDirectDescendantsDeterministically() {
+        ClassHierarchyGraph graph = graphOf(
+                cs("a/A", null),
+                cs("i/I", null),
+                cs("b/B1", "a/A"),
+                cs("b/B2", "a/A"),
+                cs("c/C", "b/B1"));
+
+        assertEquals(List.of("b/B1", "b/B2"), graph.childrenOf("a/A"));
+        assertEquals(List.of("c/C"), graph.childrenOf("b/B1"));
+        assertEquals(List.of(), graph.childrenOf("c/C"));
+    }
+
+    @Test
+    void descendantsOfIncludesTransitiveChildren() {
+        ClassHierarchyGraph graph = graphOf(
+                cs("a/A", null),
+                cs("b/B1", "a/A"),
+                cs("b/B2", "a/A"),
+                cs("c/C", "b/B1"));
+
+        assertEquals(List.of("b/B1", "b/B2", "c/C"), graph.descendantsOf("a/A"));
+        assertEquals(List.of("c/C"), graph.descendantsOf("b/B1"));
+        assertEquals(List.of(), graph.descendantsOf("c/C"));
+    }
+
+    @Test
+    void interfaceImplementersAppearAsChildrenAndDescendants() {
+        ClassHierarchyGraph graph = graphOf(
+                cs("i/I", null),
+                cs("x/X", "java/lang/Object", "i/I"));
+
+        assertEquals(List.of("x/X"), graph.childrenOf("i/I"));
+        assertEquals(List.of("x/X"), graph.descendantsOf("i/I"));
+    }
+
     private static ClassHierarchyGraph graphOf(ClassStructure... classes) {
         SortedMap<String, ClassStructure> inputs = new TreeMap<>();
         for (ClassStructure structure : classes) {

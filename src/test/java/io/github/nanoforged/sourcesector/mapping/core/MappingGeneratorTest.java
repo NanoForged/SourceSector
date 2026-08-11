@@ -42,8 +42,7 @@ class MappingGeneratorTest {
 
         assertEquals("method_0", memberEntry(entries, "a/A", "foo").intermediaryName());
         assertEquals("method_0", memberEntry(entries, "b/B", "foo").intermediaryName());
-        // b/B 类内 ()V 出现两次（foo+baz），desc 归并被门控阻断：
-        // baz 是独立方法，独立编号，不再吸附到祖先 method_0。
+        // b/B 类内 ()V 出现两次（foo+baz），baz 是独立方法（不同 name:desc），独立编号。
         assertEquals("method_1", memberEntry(entries, "b/B", "baz").intermediaryName());
     }
 
@@ -58,43 +57,43 @@ class MappingGeneratorTest {
     }
 
     @Test
-    void diamondInterfacesPickFirstDeclaredInterfaceTargetForSameSignature() {
+    void diamondInterfacesCollapseIntoConnectedFamily() {
         List<MappingEntry> entries = generate(prefix(null),
                 csWithIf("i/I1", null, List.of(), List.of(method("m", "()V"))),
                 csWithIf("i/I2", null, List.of(), List.of(method("m", "()V"))),
                 csWithIf("c/C", "java/lang/Object", List.of("i/I1", "i/I2"), List.of(method("m", "()V"))));
 
-        // 拓扑序：I1 先于 I2 → method_0 / method_1；C 按接口声明序取第一个命中（I1）→ method_0。
+        // 连通分量语义：c/C 的祖先闭包同时含 I1、I2，三个声明者（I1、I2、C）
+        // 经 C 互达 → 归为同一方法族，全部收敛 method_0（接口族塌缩，对齐 Fabric）。
         assertEquals("method_0", memberEntry(entries, "i/I1", "m").intermediaryName());
-        assertEquals("method_1", memberEntry(entries, "i/I2", "m").intermediaryName());
+        assertEquals("method_0", memberEntry(entries, "i/I2", "m").intermediaryName());
         assertEquals("method_0", memberEntry(entries, "c/C", "m").intermediaryName());
     }
 
     @Test
-    void superClassWinsOverInterfaceForLexicographicallyLargerName() {
-        // 拓扑序：i/I 先于 s/S → i/I.foo=method_0、s/S.foo=method_1；
-        // c/C 同时继承 s/S 并实现 i/I，JVM 解析优先 superclass 链 → 复用 method_1，
-        // 而非旧裁决按字典序取更小的 method_0。
+    void superAndInterfaceSameSignatureCollapseIntoConnectedFamily() {
+        // 连通分量语义：c/C 祖先闭包同时含 super s/S 与接口 i/I，三者声明 foo:()V
+        // 且经 C 互达 → 归为同一方法族，全部收敛为 method_0（不再有超类优先裁决）。
         List<MappingEntry> entries = generate(prefix(null),
                 csWithIf("i/I", null, List.of(), List.of(method("foo", "()V"))),
                 cs("s/S", null, List.of(), List.of(method("foo", "()V"))),
                 csWithIf("c/C", "s/S", List.of("i/I"), List.of(method("foo", "()V"))));
 
         assertEquals("method_0", memberEntry(entries, "i/I", "foo").intermediaryName());
-        assertEquals("method_1", memberEntry(entries, "s/S", "foo").intermediaryName());
-        assertEquals("method_1", memberEntry(entries, "c/C", "foo").intermediaryName());
+        assertEquals("method_0", memberEntry(entries, "s/S", "foo").intermediaryName());
+        assertEquals("method_0", memberEntry(entries, "c/C", "foo").intermediaryName());
     }
 
     @Test
-    void sameDescriptorDifferentObfNameReusesAncestorName() {
-        // 子类覆写祖先方法后混淆名被改名（bar vs foo），但签名同为 ()V：
-        // superclass 链签名族归并应让 b/B.bar 复用 a/A.foo 的 method_0。
+    void renamedVirtualMethodStaysIndependentByDescriptor() {
+        // 完全对齐 Fabric：删 desc 归并后，不同混淆名（bar vs foo）即使同签名 ()V
+        // 也不再收敛，各自独立编号（a/A.foo=method_0、b/B.bar=method_1）。
         List<MappingEntry> entries = generate(prefix(null),
                 cs("a/A", null, List.of(), List.of(method("foo", "()V"))),
                 cs("b/B", "a/A", List.of(), List.of(method("bar", "()V"))));
 
         assertEquals("method_0", memberEntry(entries, "a/A", "foo").intermediaryName());
-        assertEquals("method_0", memberEntry(entries, "b/B", "bar").intermediaryName());
+        assertEquals("method_1", memberEntry(entries, "b/B", "bar").intermediaryName());
     }
 
     @Test
@@ -107,6 +106,34 @@ class MappingGeneratorTest {
 
         assertEquals("method_0", memberEntry(entries, "a/A", "foo").intermediaryName());
         assertEquals("method_1", memberEntry(entries, "b/B", "qux").intermediaryName());
+    }
+
+    @Test
+    void interfaceImplementersDeclaringSameKeyCollapseIntoFamily() {
+        // 接口族塌缩：i/I 声明 run()V，a/A、b/B 各自实现 i/I 且声明同名同签名方法。
+        // 三者经接口闭包互达 → 归为同一方法族，全部共享 method_0（对齐 Fabric，Q4 语义）。
+        List<MappingEntry> entries = generate(prefix(null),
+                csWithIf("i/I", null, List.of(), List.of(method("run", "()V"))),
+                csWithIf("a/A", "java/lang/Object", List.of("i/I"), List.of(method("run", "()V"))),
+                csWithIf("b/B", "java/lang/Object", List.of("i/I"), List.of(method("run", "()V"))));
+
+        assertEquals("method_0", memberEntry(entries, "i/I", "run").intermediaryName());
+        assertEquals("method_0", memberEntry(entries, "a/A", "run").intermediaryName());
+        assertEquals("method_0", memberEntry(entries, "b/B", "run").intermediaryName());
+    }
+
+    @Test
+    void privateAndStaticMethodsStayIndependent() {
+        // 私有/静态方法不参与族归并：c/C 私有 hide()V 与静态 stat()V 不吸附祖先族。
+        List<MappingEntry> entries = generate(prefix(null),
+                cs("a/A", null, List.of(), List.of(method("foo", "()V"))),
+                cs("c/C", "a/A", List.of(),
+                        List.of(new ClassStructure.Member("hide", "()V", Opcodes.ACC_PRIVATE),
+                                new ClassStructure.Member("stat", "()V", Opcodes.ACC_STATIC))));
+
+        assertEquals("method_0", memberEntry(entries, "a/A", "foo").intermediaryName());
+        assertEquals("method_1", memberEntry(entries, "c/C", "hide").intermediaryName());
+        assertEquals("method_2", memberEntry(entries, "c/C", "stat").intermediaryName());
     }
 
     @Test
@@ -229,9 +256,9 @@ class MappingGeneratorTest {
     }
 
     @Test
-    void renamedVirtualMethodStillConvergesAcrossGenerations() {
-        // processInput 场景保真：a/A.foo()V 覆写为 b/B.foo()V，再跨代改名 c/C.m()V。
-        // 每代类内 ()V 唯一 → desc 归并照常启用 → 三代收敛为同一 method_0。
+    void renamedVirtualMethodStaysIndependentAcrossGenerations() {
+        // processInput 场景保真：a/A.foo()V 覆写为 b/B.foo()V（同 name:desc，收一族）；
+        // 跨代再改名 c/C.m()V——完全对齐 Fabric 删 desc 归并后，method_0/method_1 独立。
         List<MappingEntry> entries = generate(prefix(null),
                 cs("a/A", null, List.of(), List.of(method("foo", "()V"))),
                 cs("b/B", "a/A", List.of(), List.of(method("foo", "()V"))),
@@ -239,20 +266,42 @@ class MappingGeneratorTest {
 
         assertEquals("method_0", memberEntry(entries, "a/A", "foo").intermediaryName());
         assertEquals("method_0", memberEntry(entries, "b/B", "foo").intermediaryName());
-        assertEquals("method_0", memberEntry(entries, "c/C", "m").intermediaryName());
+        assertEquals("method_1", memberEntry(entries, "c/C", "m").intermediaryName());
     }
 
     @Test
-    void descendantUniqueDescriptorMergesIntoAncestorFirstMatch() {
-        // 父类两个 ()V（p/q）；子类单个 r()V（类内 ()V 唯一）→ desc 归并启用，
-        // 命中祖先声明序第一个同 desc 方法 p 的 method_0。
+    void descendantUniqueDescriptorStaysIndependent() {
+        // 完全对齐 Fabric：删 desc 归并后，子类独立签名 r()V 不再吸附祖先 p/q 的号。
         List<MappingEntry> entries = generate(prefix(null),
                 cs("p/P", null, List.of(), List.of(method("p", "()V"), method("q", "()V"))),
                 cs("c/C", "p/P", List.of(), List.of(method("r", "()V"))));
 
         assertEquals("method_0", memberEntry(entries, "p/P", "p").intermediaryName());
         assertEquals("method_1", memberEntry(entries, "p/P", "q").intermediaryName());
-        assertEquals("method_0", memberEntry(entries, "c/C", "r").intermediaryName());
+        assertEquals("method_2", memberEntry(entries, "c/C", "r").intermediaryName());
+    }
+
+    @Test
+    void bridgeMethodSharesFamilyWithSameNamedSibling() {
+        // 泛型桥接：c/C 声明 foo(Ljava/lang/Object;)V（ACC_BRIDGE）与
+        // foo(Ljava/lang/String;)V（实际特化），同 owner 同名 → 绑定同族，共享 method_N。
+        List<MappingEntry> entries = generate(prefix(null),
+                cs("a/A", null, List.of(), List.of(method("foo", "(Ljava/lang/Object;)V"))),
+                cs("c/C", "a/A", List.of(),
+                        List.of(method("foo", "(Ljava/lang/String;)V"),
+                                new ClassStructure.Member("foo", "(Ljava/lang/Object;)V",
+                                        Opcodes.ACC_PUBLIC | Opcodes.ACC_BRIDGE | Opcodes.ACC_SYNTHETIC))));
+
+        // a/A.foo(Object) 独立族 → method_0；c/C 的 String 特化与 Object 桥接
+        // 经 familyKey 绑定同名非桥接方法，共享同一 method_N。
+        assertEquals("method_0", memberEntry(entries, "a/A", "foo").intermediaryName());
+        assertEquals("method_1", memberEntry(entries, "c/C", "foo").intermediaryName());
+        List<String> cFooNames = entries.stream()
+                .filter(e -> e.isMethod() && "c/C".equals(e.ownerObfuscatedName()) && "foo".equals(e.obfuscatedName()))
+                .map(io.github.nanoforged.sourcesector.mapping.MappingEntry::intermediaryName)
+                .toList();
+        assertEquals(List.of("method_1", "method_1"), cFooNames,
+                "c/C 的特化与桥接方法必须共享同一族名（fabric bridge/specialized 收敛）");
     }
 
     // ---- 辅助 ----

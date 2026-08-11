@@ -33,7 +33,8 @@ public final class ClassHierarchyGraph {
     private final TreeMap<String, Node> nodes;
     private final Map<String, List<String>> parents;
     private final Map<String, List<String>> children;
-    private final Map<String, List<String>> ancestorsCache = new LinkedHashMap<>();
+    private final Map<String, List<String>> ancestorsCache = new LinkedHashMap<>();   // 祖先结果缓存
+    private final Map<String, List<String>> descendantsCache = new LinkedHashMap<>(); // 后代结果缓存
 
     ClassHierarchyGraph(TreeMap<String, Node> nodes,
                         Map<String, List<String>> parents,
@@ -173,6 +174,44 @@ public final class ClassHierarchyGraph {
                 }
             }
         }
+    }
+
+    /**
+     * 返回直接子类/实现者（单层），按构建时的字典序确定顺序。
+     * <p>
+     * 对普通类为直接子类，对接口为直接实现类及扩展该接口的子接口；
+     * 顺序源自 {@code children} 邻接（由父邻接反推时的字典序插入），完全确定。
+     *
+     * @param internalName 节点内部名
+     * @return 直接子类/实现者内部名列表
+     */
+    public List<String> childrenOf(String internalName) {
+        return children.getOrDefault(internalName, List.of());
+    }
+
+    /**
+     * 返回全部后代闭包：直接子类/实现者 + 其递归后代，排除自身。
+     * <p>
+     * 遍历顺序确定：按 {@code children} 邻接顺序 BFS 去重，结果缓存。
+     * 与 {@link #ancestorsOf} 互补，共同构成 Stitch 式方法族的双向可达判定。
+     *
+     * @param internalName 节点内部名
+     * @return 后代内部名列表（含间接）
+     */
+    public List<String> descendantsOf(String internalName) {
+        return descendantsCache.computeIfAbsent(internalName, this::computeDescendants);
+    }
+
+    private List<String> computeDescendants(String internalName) {
+        LinkedHashSet<String> seen = new LinkedHashSet<>();
+        Deque<String> queue = new ArrayDeque<>(children.getOrDefault(internalName, List.of()));
+        while (!queue.isEmpty()) {
+            String child = queue.poll();
+            if (seen.add(child)) {
+                queue.addAll(children.getOrDefault(child, List.of()));
+            }
+        }
+        return List.copyOf(seen);
     }
 
     /**

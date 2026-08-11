@@ -2,12 +2,15 @@ package io.github.nanoforged.sourcesector.mapping.core;
 
 import io.github.nanoforged.sourcesector.mapping.MappingEntry;
 import io.github.nanoforged.sourcesector.mapping.core.ClassStructure;
+import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * 中间名映射生成器：按拓扑序为全部输入类分配统一中间名。
@@ -16,19 +19,20 @@ import java.util.Objects;
  * 每类各用独立全局计数器（Fabric Intermediary 惯例，名称全局唯一）；
  * 类名可选置于 {@code prefix} 包路径下（如 {@code com/example/out/class_0}）。
  * <p>
- * 继承正确性：拓扑序保证父先于子，覆盖方法从祖先映射直接复用同一中间名。
- * 复用裁决遵循 JVM 方法解析优先级：{@code superclass} 链（近→远）精确命中
- * 【源名+描述符】优先，其次按描述符在 superclass 链内归并（处理混淆器对
- * 同一虚方法改名的场景；仅当当前类内该描述符唯一时启用）；最后接口闭包按
- * 声明序取第一个精确命中；同签名在一棵继承树内收敛为同一个 {@code method_N}，
- * 无需后续全局冲突解决步骤。
- * 库类与 phantom 桩不生成任何条目。
+ * 方法族收敛对齐 Fabric/Stitch 语义：以 {@code name:desc} 为键，声明者集合在
+ * 类继承无向图的连通分量（superclass 链 ∪ 接口闭包 ∪ 后代闭包互达）内归并为
+ * 同一个方法族，族内共享同一个 {@code method_N}。这取代旧版「精确键 + 描述符
+ * 签名族归并」的三级裁决——Fabric 从不按描述符合并，只按精确 {@code name:desc}
+ * 沿继承树连接。私有/静态方法不参与族归并，独立发号。
+ * 泛型桥接方法（{@code ACC_BRIDGE}）绑定到同 owner 内同名非桥接方法，与其共享
+ * 族（对齐 Fabric 的 bridge/specialized 收敛）。库类与 phantom 桩不生成条目。
  * 构造方法与静态初始化块（{@code <init>}/{@code <clinit>}）不映射。
  * <p>
  * 可读名回写：原始名通过 {@link ObfuscationHeuristics} 判定为未混淆（可读）时，
  * 条目携带 named 列（可读名 = 原始名），供反向映射文件使用。
  * <p>
- * 确定性：编号发放顺序 = 拓扑序 × 类文件声明顺序，同输入必然产出相同编号。
+ * 确定性：族归并前按拓扑序 × 字典序排序，命名发放顺序 = 拓扑序 × 类文件声明
+ * 顺序，同输入必然产出相同编号。
  */
 public final class MappingGenerator {
 
@@ -40,8 +44,14 @@ public final class MappingGenerator {
     private int fieldCounter;
     private int methodCounter;
     private final List<MappingEntry> entries = new ArrayList<>();
-    /** 已映射类的成员索引：obf 类名 → (name:desc → 方法条目)，供子类复用查询。 */
-    private final Map<String, Map<String, MappingEntry>> methodsByOwner = new LinkedHashMap<>();
+    /** 方法族：owner 内部名 → (name:desc → 族 id)。 */
+    private final Map<String, Map<String, Integer>> familyIdByOwner = new LinkedHashMap<>();
+    /** 方法族 id → 已分配的中间名；族内首个成员分配后其余复用。 */
+    private final List<String> familyNames = new ArrayList<>();
+    /** owner 的继承可达集合（祖先 ∪ 后代）缓存，供族归并判定。 */
+    private final Map<String, Set<String>> reachableCache = new LinkedHashMap<>();
+    /** 拓扑序（含全部节点），供确定性归并。 */
+    private List<String> topologicalOrder;
 
     private MappingGenerator(ClassHierarchyGraph graph, ObfuscationHeuristics heuristics, String prefix) {
         this.graph = Objects.requireNonNull(graph, "graph");
@@ -65,7 +75,9 @@ public final class MappingGenerator {
     }
 
     private List<MappingEntry> run() {
-        for (String name : graph.topologicalOrder()) {
+        topologicalOrder = graph.topologicalOrder();
+        buildMethodFamilies();
+        for (String name : topologicalOrder) {
             if (!graph.isMapped(name)) {
                 continue;
             }
@@ -76,6 +88,111 @@ public final class MappingGenerator {
             mapClass(structure);
         }
         return entries;
+    }
+
+    /**
+     * 预构建方法族：以 {@code name:desc} 为键，把继承可达的声明者归并为同一族。
+     * <p>
+     * 对齐 Stitch Stage 3：对每个键收集全部非私有/非静态/非构造的声明者，两个
+     * 声明者若一方在另一方的祖先（superclass ∪ 接口）或后代（subclass ∪ 实现者）
+     * 闭合内则属同一族。族内中间类不声明该键也允许穿越；私有/静态方法独立发号。
+     */
+    private void buildMethodFamilies() {
+        Map<String, List<String>> declarersByKey = new LinkedHashMap<>();
+        for (String name : topologicalOrder) {
+            if (!graph.isMapped(name)) {
+                continue;
+            }
+            ClassStructure structure = graph.structureOf(name);
+            if (structure == null) {
+                continue;
+            }
+            for (ClassStructure.Member method : structure.methods()) {
+                if (isConstructor(method) || isPrivate(method) || isStatic(method)) {
+                    continue;
+                }
+                String key = familyKey(structure, method);
+                declarersByKey.computeIfAbsent(key, ignored -> new ArrayList<>()).add(name);
+            }
+        }
+
+        // 每个键的声明者按连通分量归并：两个声明者互达（一方在另一方
+        // 祖先/后代闭包内）则同族，并查集聚类；分量内以拓扑序最前者为代表。
+        for (Map.Entry<String, List<String>> entry : declarersByKey.entrySet()) {
+            String key = entry.getKey();
+            List<String> declarers = entry.getValue();
+            int size = declarers.size();
+            if (size == 1) {
+                registerFamily(key, declarers.getFirst(), declarers.getFirst());
+                continue;
+            }
+            int[] parent = new int[size];
+            for (int i = 0; i < size; i++) {
+                parent[i] = i;
+            }
+            for (int i = 0; i < size; i++) {
+                Set<String> reachable = reachableSet(declarers.get(i));
+                for (int j = i + 1; j < size; j++) {
+                    if (reachable.contains(declarers.get(j))) {
+                        unionInto(parent, i, j);
+                    }
+                }
+            }
+            Set<Integer> componentRepresentative = new HashSet<>();
+            Map<Integer, String> componentRepresentativeMap = new LinkedHashMap<>();
+            for (int i = 0; i < size; i++) {
+                int root = findRoot(parent, i);
+                if (componentRepresentative.add(root)) {
+                    componentRepresentativeMap.put(root, declarers.get(i));
+                }
+            }
+            for (int i = 0; i < size; i++) {
+                int root = findRoot(parent, i);
+                registerFamily(key, componentRepresentativeMap.get(root), declarers.get(i));
+            }
+        }
+    }
+
+    /** 把声明者归入代表类的方法族：代表族号缺失则新建，其余成员复用代表族号。 */
+    private void registerFamily(String key, String representative, String declarer) {
+        Map<String, Integer> repFamilies = familyIdByOwner.computeIfAbsent(representative,
+                ignored -> new LinkedHashMap<>());
+        Integer repFamily = repFamilies.get(key);
+        if (repFamily == null) {
+            repFamily = familyNames.size();
+            repFamilies.put(key, repFamily);
+            familyNames.add(null);
+        }
+        if (!representative.equals(declarer)) {
+            familyIdByOwner.computeIfAbsent(declarer, ignored -> new LinkedHashMap<>()).put(key, repFamily);
+        }
+    }
+
+    /** owner 的继承可达集合（祖先 ∪ 后代，含接口/实现者），带缓存。 */
+    private Set<String> reachableSet(String owner) {
+        Set<String> reachable = reachableCache.get(owner);
+        if (reachable == null) {
+            reachable = new HashSet<>(graph.ancestorsOf(owner));
+            reachable.addAll(graph.descendantsOf(owner));
+            reachableCache.put(owner, reachable);
+        }
+        return reachable;
+    }
+
+    private static int findRoot(int[] parent, int index) {
+        while (parent[index] != index) {
+            parent[index] = parent[parent[index]];
+            index = parent[index];
+        }
+        return index;
+    }
+
+    private static void unionInto(int[] parent, int a, int b) {
+        int rootA = findRoot(parent, a);
+        int rootB = findRoot(parent, b);
+        if (rootA != rootB) {
+            parent[rootA] = rootB;
+        }
     }
 
     private void mapClass(ClassStructure structure) {
@@ -91,99 +208,61 @@ public final class MappingGenerator {
                     obfuscatedName, intermediateName, field.name(), fieldName, readableName, field.desc()));
         }
 
-        Map<String, Integer> descriptorCounts = countDescriptors(structure);
+        Map<String, Integer> ownerFamilies = familyIdByOwner.get(obfuscatedName);
         for (ClassStructure.Member method : structure.methods()) {
             if (isConstructor(method)) {
                 continue;
             }
-            String key = memberKey(method);
-            boolean descriptorMergeEligible = descriptorCounts.getOrDefault(method.desc(), 0) == 1;
-            String reusedName = reusableMethodName(obfuscatedName, key, method.desc(), descriptorMergeEligible);
-            String methodName = reusedName != null ? reusedName : "method_" + methodCounter++;
+            String key = familyKey(structure, method);
+            String methodName;
+            Integer familyId = ownerFamilies == null ? null : ownerFamilies.get(key);
+            if (familyId == null) {
+                methodName = "method_" + methodCounter++; // 私有/静态/无族方法独立发号
+            } else if (familyNames.get(familyId) == null) {
+                methodName = "method_" + methodCounter++;
+                familyNames.set(familyId, methodName);
+            } else {
+                methodName = familyNames.get(familyId);
+            }
             String readableName = heuristics.isReadableMemberName(method.name()) ? method.name() : null;
             MappingEntry entry = MappingEntry.methodEntry(
                     obfuscatedName, intermediateName, method.name(), methodName, readableName, method.desc());
             entries.add(entry);
-            methodsByOwner.computeIfAbsent(obfuscatedName, ignored -> new LinkedHashMap<>()).put(key, entry);
         }
+    }
+
+    private static boolean isPrivate(ClassStructure.Member method) {
+        return (method.access() & Opcodes.ACC_PRIVATE) != 0;
+    }
+
+    private static boolean isStatic(ClassStructure.Member method) {
+        return (method.access() & Opcodes.ACC_STATIC) != 0;
     }
 
     /**
-     * 在祖先中寻找可复用的中间名，遵循 JVM 方法解析优先级。
-     * <p>
-     * 优先级：1) {@code superclass} 链按精确 {@code name:desc}（近→远）；
-     * 2) {@code superclass} 链按描述符匹配（签名族归并，处理同一虚方法在
-     * 不同类混淆名不一致的情况，如 {@code processInput} vs {@code super}；仅当
-     * 当前类内该描述符唯一时启用，避免把类内多个独立同签名方法吸附到同一中间名）；
-     * 3) 接口闭包按精确 {@code name:desc}，取声明序第一个命中。
-     * <p>
-     * 拓扑序保证祖先已处理完毕。命中即返回最近祖先的第一个匹配，
-     * 不再采用字典序最小裁决（避免跨继承树误选）。
+     * 方法族键：默认 {@code name:desc}；{@code ACC_BRIDGE} 泛型桥接方法绑定到
+     * 同 owner 内同名非桥接方法（对齐 Fabric 的 bridge/specialized 同族收敛）。
      *
-     * @param owner 当前类内部名
-     * @param key   {@code name:desc}
-     * @param desc  方法描述符
-     * @param descriptorMergeEligible 当前类内该描述符是否唯一（唯一才允许按描述符归并）
-     * @return 复用的中间名；无匹配返回 {@code null}
+     * @param structure 所属类结构
+     * @param method    方法
+     * @return 族键
      */
-    private String reusableMethodName(String owner, String key, String desc, boolean descriptorMergeEligible) {
-        for (String ancestor : graph.superChainOf(owner)) {
-            String match = methodNameByKey(ancestor, key);
-            if (match != null) {
-                return match;
-            }
-        }
-        if (descriptorMergeEligible) {
-            for (String ancestor : graph.superChainOf(owner)) {
-                String match = methodNameByDescriptor(ancestor, desc);
-                if (match != null) {
-                    return match;
+    private static String familyKey(ClassStructure structure, ClassStructure.Member method) {
+        if (isBridge(method)) {
+            for (ClassStructure.Member candidate : structure.methods()) {
+                if (candidate != method
+                        && candidate.name().equals(method.name())
+                        && !isBridge(candidate)
+                        && !isConstructor(candidate)) {
+                    return memberKey(candidate);
                 }
             }
         }
-        for (String iface : graph.interfaceClosureOf(owner)) {
-            String match = methodNameByKey(iface, key);
-            if (match != null) {
-                return match;
-            }
-        }
-        return null;
+        return memberKey(method);
     }
 
-    /** 在指定已映射类的方法索引中按精确 {@code name:desc} 查找。 */
-    private String methodNameByKey(String owner, String key) {
-        Map<String, MappingEntry> ownerMethods = methodsByOwner.get(owner);
-        if (ownerMethods == null) {
-            return null;
-        }
-        MappingEntry candidate = ownerMethods.get(key);
-        return candidate == null ? null : candidate.intermediaryName();
-    }
-
-    /** 在指定已映射类的方法索引中按描述符查找（签名族归并）。 */
-    private String methodNameByDescriptor(String owner, String desc) {
-        Map<String, MappingEntry> ownerMethods = methodsByOwner.get(owner);
-        if (ownerMethods == null) {
-            return null;
-        }
-        for (MappingEntry entry : ownerMethods.values()) {
-            if (desc.equals(entry.descriptor())) {
-                return entry.intermediaryName();
-            }
-        }
-        return null;
-    }
-
-    /** 统计当前类内各方法描述符出现次数（跳过构造方法），供 desc 归并门控使用。 */
-    private static Map<String, Integer> countDescriptors(ClassStructure structure) {
-        Map<String, Integer> counts = new LinkedHashMap<>();
-        for (ClassStructure.Member method : structure.methods()) {
-            if (isConstructor(method)) {
-                continue;
-            }
-            counts.merge(method.desc(), 1, Integer::sum);
-        }
-        return counts;
+    private static boolean isBridge(ClassStructure.Member method) {
+        return (method.access() & Opcodes.ACC_BRIDGE) != 0;
     }
 
     private static boolean isConstructor(ClassStructure.Member method) {
