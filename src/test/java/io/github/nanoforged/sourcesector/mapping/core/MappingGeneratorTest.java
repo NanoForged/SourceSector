@@ -283,8 +283,11 @@ class MappingGeneratorTest {
 
     @Test
     void bridgeMethodSharesFamilyWithSameNamedSibling() {
-        // 泛型桥接：c/C 声明 foo(Ljava/lang/Object;)V（ACC_BRIDGE）与
-        // foo(Ljava/lang/String;)V（实际特化），同 owner 同名 → 绑定同族，共享 method_N。
+        // 泛型桥接：c/C extends a/A，声明 foo(Ljava/lang/String;)V（特化）与
+        // foo(Ljava/lang/Object;)V（ACC_BRIDGE 桥接到擦除签名）。
+        // 桥接键级等价把 foo:(Object)V（a/A 的擦除族）与 foo:(String)V（c/C 特化族）
+        // 合并 → a/A.foo 与 c/C 的特化+桥接收敛为同一 method_N（消除 TinyRemapper
+        // source conflict：同名同 desc 跨继承链不再多个编号）。
         List<MappingEntry> entries = generate(prefix(null),
                 cs("a/A", null, List.of(), List.of(method("foo", "(Ljava/lang/Object;)V"))),
                 cs("c/C", "a/A", List.of(),
@@ -292,16 +295,83 @@ class MappingGeneratorTest {
                                 new ClassStructure.Member("foo", "(Ljava/lang/Object;)V",
                                         Opcodes.ACC_PUBLIC | Opcodes.ACC_BRIDGE | Opcodes.ACC_SYNTHETIC))));
 
-        // a/A.foo(Object) 独立族 → method_0；c/C 的 String 特化与 Object 桥接
-        // 经 familyKey 绑定同名非桥接方法，共享同一 method_N。
         assertEquals("method_0", memberEntry(entries, "a/A", "foo").intermediaryName());
-        assertEquals("method_1", memberEntry(entries, "c/C", "foo").intermediaryName());
+        assertEquals("method_0", memberEntry(entries, "c/C", "foo").intermediaryName());
         List<String> cFooNames = entries.stream()
                 .filter(e -> e.isMethod() && "c/C".equals(e.ownerObfuscatedName()) && "foo".equals(e.obfuscatedName()))
                 .map(io.github.nanoforged.sourcesector.mapping.MappingEntry::intermediaryName)
                 .toList();
-        assertEquals(List.of("method_1", "method_1"), cFooNames,
-                "c/C 的特化与桥接方法必须共享同一族名（fabric bridge/specialized 收敛）");
+        assertEquals(List.of("method_0", "method_0"), cFooNames,
+                "c/C 的特化与桥接方法经键级等价并入祖先擦除族，共享同一 method_N");
+    }
+
+    @Test
+    void bridgeFamilyMergesInterfaceFamilyAcrossClasses() {
+        // 方向一：跨类桥接族。接口 i/I 声明 foo(Object)V（泛型擦除键）；
+        // c/C 实现 i/I 并声明特化 foo(String)V + 桥接 foo(Object)V（ACC_BRIDGE）。
+        // 桥接方法将 foo:(Object) 键（接口族）与 foo:(String) 键（特化族）等价
+        // 合并 → i/I、c/C 特化、c/C 桥接三方法收敛为同一 method_N（消除 TinyRemapper
+        // source conflict：同 (name,desc) 跨类不再多个编号）。
+        List<MappingEntry> entries = generate(prefix(null),
+                csWithIf("i/I", null, List.of(), List.of(method("foo", "(Ljava/lang/Object;)V"))),
+                csWithIf("c/C", "java/lang/Object", List.of("i/I"),
+                        List.of(method("foo", "(Ljava/lang/String;)V"),
+                                new ClassStructure.Member("foo", "(Ljava/lang/Object;)V",
+                                        Opcodes.ACC_PUBLIC | Opcodes.ACC_BRIDGE | Opcodes.ACC_SYNTHETIC))));
+
+        assertEquals("method_0", memberEntry(entries, "i/I", "foo").intermediaryName());
+        assertEquals("method_0", memberEntry(entries, "c/C", "foo").intermediaryName());
+        List<String> cFooNames = entries.stream()
+                .filter(e -> e.isMethod() && "c/C".equals(e.ownerObfuscatedName()) && "foo".equals(e.obfuscatedName()))
+                .map(io.github.nanoforged.sourcesector.mapping.MappingEntry::intermediaryName)
+                .toList();
+        assertEquals(List.of("method_0", "method_0"), cFooNames,
+                "接口族与特化族经桥接等价合并，必须收敛为同一 method_N");
+    }
+
+    @Test
+    void unrelatedBridgeTreesStayIndependent() {
+        // 方向一防过度合并：两个互不相关的树各自有独立的桥接特化族，
+        // 桥接键等价只在同一 (name,desc) 族内生效，不得跨树合并。
+        List<MappingEntry> entries = generate(prefix(null),
+                cs("x/X", null, List.of(),
+                        List.of(new ClassStructure.Member("foo", "(Ljava/lang/Object;)V",
+                                        Opcodes.ACC_PUBLIC | Opcodes.ACC_BRIDGE | Opcodes.ACC_SYNTHETIC),
+                                method("foo", "(Ljava/lang/String;)V"))),
+                cs("y/Y", null, List.of(),
+                        List.of(new ClassStructure.Member("foo", "(Ljava/lang/Object;)V",
+                                        Opcodes.ACC_PUBLIC | Opcodes.ACC_BRIDGE | Opcodes.ACC_SYNTHETIC),
+                                method("foo", "(Ljava/lang/Integer;)V"))));
+
+        // x/X 的特化 String 键与 y/Y 的特化 Integer 键各自成族，两树不互达。
+        assertEquals("method_0", memberEntry(entries, "x/X", "foo").intermediaryName());
+        assertEquals("method_1", memberEntry(entries, "y/Y", "foo").intermediaryName());
+    }
+
+    @Test
+    void libraryInterfaceActsAsFamilyUmbrella() {
+        // 方向二：库类（mapped=false，结构真实）参与声明者集合充当伞点。
+        // 库接口 lib/I 声明 run()V；两个输入类 a/A、b/B 各自实现 lib/I 并声明 run()V。
+        // 带库时经 lib/I 伞点连通 → 三方法同族 method_0（消除 getSource 2409/1948 式分裂）。
+        ClassStructure libI = csWithIf("lib/I", null, List.of(), List.of(method("run", "()V")));
+        ClassStructure a = csWithIf("a/A", "java/lang/Object", List.of("lib/I"), List.of(method("run", "()V")));
+        ClassStructure b = csWithIf("b/B", "java/lang/Object", List.of("lib/I"), List.of(method("run", "()V")));
+
+        SortedMap<String, ClassStructure> inputs = new TreeMap<>();
+        inputs.putAll(single(a));
+        inputs.putAll(single(b));
+        ClassHierarchyGraph withLib = ClassHierarchyBuilder.build(new ClassSet(new TreeMap<>(inputs), single(libI)));
+        List<MappingEntry> withLibEntries = MappingGenerator.generate(withLib, new ObfuscationHeuristics(), null);
+        assertEquals("method_0", memberEntry(withLibEntries, "a/A", "run").intermediaryName());
+        assertEquals("method_0", memberEntry(withLibEntries, "b/B", "run").intermediaryName(),
+                "带库伞点：两个实现类与库接口应收敛为同一族");
+
+        ClassHierarchyGraph withoutLib = ClassHierarchyBuilder.build(
+                new ClassSet(new TreeMap<>(inputs), new TreeMap<>()));
+        List<MappingEntry> withoutLibEntries = MappingGenerator.generate(withoutLib, new ObfuscationHeuristics(), null);
+        assertEquals("method_0", memberEntry(withoutLibEntries, "a/A", "run").intermediaryName());
+        assertEquals("method_1", memberEntry(withoutLibEntries, "b/B", "run").intermediaryName(),
+                "无库伞点：lib/I 桩化断链，两个实现类独立编号");
     }
 
     // ---- 辅助 ----

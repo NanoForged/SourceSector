@@ -24,8 +24,11 @@ import java.util.Set;
  * 同一个方法族，族内共享同一个 {@code method_N}。这取代旧版「精确键 + 描述符
  * 签名族归并」的三级裁决——Fabric 从不按描述符合并，只按精确 {@code name:desc}
  * 沿继承树连接。私有/静态方法不参与族归并，独立发号。
- * 泛型桥接方法（{@code ACC_BRIDGE}）绑定到同 owner 内同名非桥接方法，与其共享
- * 族（对齐 Fabric 的 bridge/specialized 收敛）。库类与 phantom 桩不生成条目。
+* 泛型桥接方法（{@code ACC_BRIDGE}）绑定到同 owner 内同名非桥接方法，与其共享
+     * 族（对齐 Fabric 的 bridge/specialized 收敛）；同时桥接方法自身的
+     * {@code name:bridgeDesc} 键与兄弟特化键在键级等价（跨类族合并：接口泛型族
+     * 与各实现类的特化族收敛为同一 method_N）。库类（mapped=false 但有结构）参与
+     * 族归并充当继承/接口伞点，但不生成条目；phantom 桩（无结构）不参与。
  * 构造方法与静态初始化块（{@code <init>}/{@code <clinit>}）不映射。
  * <p>
  * 可读名回写：原始名通过 {@link ObfuscationHeuristics} 判定为未混淆（可读）时，
@@ -50,6 +53,8 @@ public final class MappingGenerator {
     private final List<String> familyNames = new ArrayList<>();
     /** owner 的继承可达集合（祖先 ∪ 后代）缓存，供族归并判定。 */
     private final Map<String, Set<String>> reachableCache = new LinkedHashMap<>();
+    /** 键级并查集：{@code name:bridgeDesc}（接口族）与同 owner 兄弟特化键等价，父键字典序小者为根。 */
+    private final Map<String, String> familyKeyParent = new LinkedHashMap<>();
     /** 拓扑序（含全部节点），供确定性归并。 */
     private List<String> topologicalOrder;
 
@@ -99,10 +104,9 @@ public final class MappingGenerator {
      */
     private void buildMethodFamilies() {
         Map<String, List<String>> declarersByKey = new LinkedHashMap<>();
+        // 收集方向二：库类（mapped=false 但有结构）也参与声明者集合，充当跨输入
+        // 树的继承/接口伞点；phantom 桩（structure==null）无成员，跳过。
         for (String name : topologicalOrder) {
-            if (!graph.isMapped(name)) {
-                continue;
-            }
             ClassStructure structure = graph.structureOf(name);
             if (structure == null) {
                 continue;
@@ -113,12 +117,24 @@ public final class MappingGenerator {
                 }
                 String key = familyKey(structure, method);
                 declarersByKey.computeIfAbsent(key, ignored -> new ArrayList<>()).add(name);
+                // 收集方向一：桥接方法将其 {@code name:bridgeDesc} 键（接口族）与
+                // 同 owner 兄弟特化键等价——键级 union，供后续跨键族合并。
+                if (isBridge(method) && !key.equals(memberKey(method))) {
+                    unionFamilyKey(memberKey(method), key);
+                }
             }
         }
 
-        // 每个键的声明者按连通分量归并：两个声明者互达（一方在另一方
-        // 祖先/后代闭包内）则同族，并查集聚类；分量内以拓扑序最前者为代表。
+        // 键等价归并：把桥接等价键合并成同一组，声明者集合取并集后统一聚类。
+        Map<String, List<String>> mergedDeclarers = new LinkedHashMap<>();
         for (Map.Entry<String, List<String>> entry : declarersByKey.entrySet()) {
+            String root = familyKeyRoot(entry.getKey());
+            mergedDeclarers.computeIfAbsent(root, ignored -> new ArrayList<>()).addAll(entry.getValue());
+        }
+
+        // 每（合并后）键的声明者按连通分量归并：两个声明者互达（一方在另一方
+        // 祖先/后代闭包内）则同族，并查集聚类；分量内以拓扑序最前者为代表。
+        for (Map.Entry<String, List<String>> entry : mergedDeclarers.entrySet()) {
             String key = entry.getKey();
             List<String> declarers = entry.getValue();
             int size = declarers.size();
@@ -150,6 +166,37 @@ public final class MappingGenerator {
                 int root = findRoot(parent, i);
                 registerFamily(key, componentRepresentativeMap.get(root), declarers.get(i));
             }
+        }
+    }
+
+    /** 桥接等价键并查集：{@code bridgeKey}（接口族键）与 {@code siblingKey}（特化键）归一族，父键取字典序小者。 */
+    private void unionFamilyKey(String bridgeKey, String siblingKey) {
+        String rootA = familyKeyRoot(bridgeKey);
+        String rootB = familyKeyRoot(siblingKey);
+        if (rootA.equals(rootB)) {
+            return;
+        }
+        if (rootB.compareTo(rootA) < 0) {
+            familyKeyParent.put(rootA, rootB);
+        } else {
+            familyKeyParent.put(rootB, rootA);
+        }
+    }
+
+    /** 键级并查集根查找（带路径压缩）。 */
+    private String familyKeyRoot(String key) {
+        List<String> chain = new java.util.ArrayList<>();
+        String root = key;
+        while (true) {
+            String parent = familyKeyParent.get(root);
+            if (parent == null || parent.equals(root)) {
+                for (String node : chain) {
+                    familyKeyParent.put(node, root);
+                }
+                return root;
+            }
+            chain.add(root);
+            root = parent;
         }
     }
 
@@ -213,7 +260,7 @@ public final class MappingGenerator {
             if (isConstructor(method)) {
                 continue;
             }
-            String key = familyKey(structure, method);
+            String key = familyKeyRoot(familyKey(structure, method));
             String methodName;
             Integer familyId = ownerFamilies == null ? null : ownerFamilies.get(key);
             if (familyId == null) {
