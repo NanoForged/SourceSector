@@ -142,6 +142,10 @@ Helper methods `jarInputs(jars, dirs)` / `jarLibraries(jars, dirs)` expand jar d
 - Constructors (`<init>`/`<clinit>`) are not mapped. Library classes and phantom stubs produce no entries.
 - Original names that pass `ObfuscationHeuristics` (readable ASCII identifiers that are not obfuscator dictionary names, not `o0`-style junk) are recorded in the `named` column of the back-mapping.
 
+## Known upstream quirks
+
+- **Enum constant `name()` may differ from the field name.** The upstream (Chinese-localized and even original Linux) jars contain enum classes whose `<clinit>` name strings were re-obfuscated independently from the field names — e.g. `EngineGlowType.PRIMARY.name()` returns `"NORMAL"` at runtime. Mappings rename the *field* (`Ó00000 → PRIMARY`) but the baked-in name string is part of the input jar and is preserved verbatim. Consumers must therefore compare enum constants **by reference or ordinal, never by `name()`/`valueOf()`**, unless the target string is known to match the jar (e.g. `BlendMode.GLOW` whose name string is intact).
+
 ## Architecture
 
 ```
